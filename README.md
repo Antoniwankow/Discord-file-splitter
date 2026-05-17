@@ -3,12 +3,6 @@
 
 **Разбивай большие файлы на части для Discord и собирай обратно — всё в браузере. Без загрузок на сервер, без установки, без лишних заморочек.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![HTML5](https://img.shields.io/badge/HTML-5-orange.svg)](https://developer.mozilla.org/ru/docs/Web/HTML)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow.svg)](https://developer.mozilla.org/ru/docs/Web/JavaScript)
-
----
-
 ## 📖 Содержание
 
 - [Зачем это нужно](#-зачем-это-нужно)
