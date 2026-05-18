@@ -114,39 +114,30 @@
             color: #b85c00;
             margin-top: 4px;
         }
+        .warning-top-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px 18px;
+            background: #fff3cd;
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            color: #b85c00;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .warning-top-link:hover {
+            background: #ffe69c;
+        }
     </style>
 </head>
 <body>
     <h1>🔧 Разбиватель + Сборщик для Discord</h1>
 
-    <!-- ПРЕДУПРЕЖДЕНИЕ -->
-    <div class="section warning-section">
-        <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h2>
-        <p><strong>Не разделяйте разделённые файлы повторно!</strong></p>
-        
-        <p>После того, как вы разбили файл на части (например, <code>file_part001.dat</code>, <code>file_part002.dat</code> и т.д.), эти части <strong>нельзя разбивать заново</strong>.</p>
-        
-        <div class="warning-example">
-            <strong>❌ Неправильно:</strong>
-            <ul>
-                <li>Отправить <code>file_part001.dat</code> через Discord</li>
-                <li>Получатель разбивает <code>file_part001.dat</code> ещё раз</li>
-                <li>При сборке файл будет повреждён и нечитаем</li>
-            </ul>
-        </div>
-        
-        <div class="warning-correct">
-            <strong>✅ Правильно:</strong>
-            <ul>
-                <li>Разделите исходный файл на части</li>
-                <li>Отправьте ВСЕ части получателю</li>
-                <li>Получатель собирает их обратно в исходный файл</li>
-                <li>Если нужно снова разбить, разбивайте уже собранный исходный файл</li>
-            </ul>
-        </div>
-        
-        <p><strong style="color: #ff6b6b;">⚠️ Результат повторного разбиения:</strong> Потеря данных, невозможность восстановления файла при сборке.</p>
-    </div>
+    <!-- Ссылка на предупреждение -->
+    <a href="#important-warning" class="warning-top-link">⚠️ Перед использованием обязательно прочитайте важное предупреждение внизу страницы</a>
 
     <!-- Разбивка -->
     <div class="section">
@@ -174,6 +165,37 @@
         <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать файл обратно</button>
         <div id="mergeProgress" class="progress-info" style="display: none;"></div>
         <div id="mergeResult"></div>
+    </div>
+
+    <!-- ПРЕДУПРЕЖДЕНИЕ (перемещено вниз) -->
+    <div class="section warning-section" id="important-warning">
+        <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h2>
+        <p><strong>Не разделяйте разделённые файлы повторно!</strong></p>
+        
+        <p>После того, как вы разбили файл на части (например, <code>file_part001.dat</code>, <code>file_part002.dat</code> и т.д.), эти части <strong>нельзя разбивать заново</strong>.</p>
+        
+        <div class="warning-example">
+            <strong>❌ Неправильно:</strong>
+            <ul>
+                <li>Отправитель разбивает исходный файл на части</li>
+                <li>Получатель скачивает <strong>одну</strong> часть (например, <code>file_part001.dat</code>)</li>
+                <li>Получатель разбивает <code>file_part001.dat</code> ещё раз этим же инструментом</li>
+                <li>При сборке файл будет повреждён и нечитаем</li>
+            </ul>
+        </div>
+        
+        <div class="warning-correct">
+            <strong>✅ Правильно:</strong>
+            <ul>
+                <li>Разделите исходный файл на части</li>
+                <li>Отправьте <strong>ВСЕ</strong> части получателю</li>
+                <li>Получатель собирает их обратно в исходный файл</li>
+                <li>Если нужно снова разбить — разбивайте уже собранный исходный файл, а не его части</li>
+            </ul>
+        </div>
+        
+        <p><strong style="color: #ff6b6b;">⚠️ Результат повторного разбиения частей:</strong> потеря данных, невозможность восстановления файла при сборке.</p>
+        <p><strong>Почему так происходит:</strong> при первом разбиении части шифруются. Если разбить зашифрованную часть повторно, она будет зашифрована дважды, и при сборке расшифруется только один раз, оставшись повреждённой.</p>
     </div>
 
     <script>
@@ -299,7 +321,7 @@
                 }
 
                 progressDiv.innerHTML = `<span class="success">✅ Разбиение успешно завершено! Всего частей: ${chunksCount}</span><br>
-                    <small>Все части зашифрованы. Для восстановления исходного файла используйте функцию сборки. НЕ РАЗБИВАЙТЕ ЭТИ ЧАСТИ ПОВТОРНО!</small>`;
+                    <small>Все части зашифрованы. Для восстановления исходного файла используйте функцию сборки. <a href="#important-warning">НЕ РАЗБИВАЙТЕ ЭТИ ЧАСТИ ПОВТОРНО!</a></small>`;
             } catch (error) {
                 console.error('Ошибка при разбивке:', error);
                 progressDiv.innerHTML = `<span style="color: red;">❌ Произошла ошибка: ${error.message}</span>`;
