@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разбиватель + Сборщик для Discord</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background-color: #fafafa;
+            color: #333;
+        }
+        h1 { text-align: center; color: #5865F2; }
+        .section { 
+            background: white;
+            border: 1px solid #e0e0e0; 
+            border-radius: 12px; 
+            padding: 25px; 
+            margin: 25px 0; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .warning-section {
+            background: #fff3cd;
+            border: 2px solid #ff6b6b;
+            border-left: 6px solid #ff6b6b;
+            color: #b85c00;
+        }
+        .warning-section h2 {
+            color: #ff6b6b;
+            margin-top: 0;
+        }
+        .warning-section strong {
+            color: #ff6b6b;
+        }
+        .warning-example {
+            background: #ffe0e0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+        .warning-correct {
+            background: #e0ffe0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+        h2 { margin-top: 0; font-weight: 500; }
+        label { font-weight: 600; display: block; margin-bottom: 5px; }
+        input[type="number"] { 
+            width: 80px; 
+            padding: 8px; 
+            font-size: 16px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+        }
+        input[type="file"] { margin: 8px 0; }
+        button { 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            margin: 10px 5px 10px 0; 
+            cursor: pointer; 
+            background-color: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #4752c4; }
+        button:active { background-color: #3c45a5; }
+        
+        .chunk { 
+            background: #f8f9fa; 
+            padding: 12px 15px; 
+            margin: 10px 0; 
+            border-radius: 8px;
+            border-left: 4px solid #5865F2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .chunk-info { flex-grow: 1; }
+        .success { color: #2d7d46; font-weight: bold; }
+        .warning { color: #b85c00; font-weight: bold; }
+        .download-link { 
+            font-size: 14px; 
+            text-decoration: none; 
+            font-weight: 600; 
+            padding: 6px 12px;
+            background: #5865F2;
+            color: white;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .download-link.downloaded { 
+            background: #2d7d46; 
+            pointer-events: none; 
+        }
+        .progress-info {
+            margin: 15px 0;
+            padding: 10px;
+            background: #eef2ff;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        small { color: #666; display: block; margin-top: 4px; }
+        .encrypted-note {
+            font-size: 0.8em;
+            color: #b85c00;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Разбиватель + Сборщик для Discord</h1>
+
+    <!-- ПРЕДУПРЕЖДЕНИЕ -->
+    <div class="section warning-section">
+        <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h2>
+        <p><strong>Не разделяйте разделённые файлы повторно!</strong></p>
+        
+        <p>После того, как вы разбили файл на части (например, <code>file_part001.dat</code>, <code>file_part002.dat</code> и т.д.), эти части <strong>нельзя разбивать заново</strong>.</p>
+        
+        <div class="warning-example">
+            <strong>❌ Неправильно:</strong>
+            <ul>
+                <li>Отправить <code>file_part001.dat</code> через Discord</li>
+                <li>Получатель разбивает <code>file_part001.dat</code> ещё раз</li>
+                <li>При сборке файл будет повреждён и нечитаем</li>
+            </ul>
+        </div>
+        
+        <div class="warning-correct">
+            <strong>✅ Правильно:</strong>
+            <ul>
+                <li>Разделите исходный файл на части</li>
+                <li>Отправьте ВСЕ части получателю</li>
+                <li>Получатель собирает их обратно в исходный файл</li>
+                <li>Если нужно снова разбить, разбивайте уже собранный исходный файл</li>
+            </ul>
+        </div>
+        
+        <p><strong style="color: #ff6b6b;">⚠️ Результат повторного разбиения:</strong> Потеря данных, невозможность восстановления файла при сборке.</p>
+    </div>
+
+    <!-- Разбивка -->
+    <div class="section">
+        <h2>1. Разбить большой файл</h2>
+        
+        <label for="chunkSize">Размер одного кусочка (МБ):</label>
+        <input type="number" id="chunkSize" value="9" min="0.1" max="50" step="0.5">
+        <small>Рекомендуется 8–9 МБ для Discord (макс. 10 МБ для обычных пользователей)</small>
+        
+        <label for="splitInput" style="margin-top: 15px;">Выберите файл:</label>
+        <input type="file" id="splitInput" />
+        
+        <button id="splitBtn" onclick="splitFile()">✂️ Разбить файл на части</button>
+        <div id="splitProgress" class="progress-info" style="display: none;"></div>
+        <div id="splitResult"></div>
+    </div>
+
+    <!-- Сборка -->
+    <div class="section">
+        <h2>2. Собрать файл из частей</h2>
+        <label for="mergeInput">Выберите все части файла:</label>
+        <input type="file" id="mergeInput" multiple />
+        <small>⚠️ Убедитесь, что выбраны все части и порядок соблюдён (файлы сортируются автоматически по номеру)</small>
+        
+        <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать файл обратно</button>
+        <div id="mergeProgress" class="progress-info" style="display: none;"></div>
+        <div id="mergeResult"></div>
+    </div>
+
+    <script>
+        // Хранилище для созданных objectURL, чтобы потом освободить память
+        const createdURLs = [];
+
+        function revokeAllURLs() {
+            createdURLs.forEach(url => URL.revokeObjectURL(url));
+            createdURLs.length = 0;
+        }
+
+        // ====================== ШИФРОВАНИЕ / ДЕШИФРОВАНИЕ ======================
+        const XOR_KEY = 0x5A; // простой ключ для XOR
+
+        // Применяет XOR ко всем байтам буфера (мутирует переданный буфер для производительности)
+        function xorBuffer(buffer) {
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.length; i++) {
+                bytes[i] ^= XOR_KEY;
+            }
+            return buffer;
+        }
+
+        // ====================== РАЗБИВКА ======================
+        async function splitFile() {
+            const fileInput = document.getElementById('splitInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Пожалуйста, сначала выберите файл для разбивки.');
+                return;
+            }
+
+            const progressDiv = document.getElementById('splitProgress');
+            const resultDiv = document.getElementById('splitResult');
+            const splitBtn = document.getElementById('splitBtn');
+            
+            // Очищаем предыдущие результаты и URL
+            revokeAllURLs();
+            resultDiv.innerHTML = '';
+            
+            // Получаем размер кусочка из поля ввода
+            let chunkMB = parseFloat(document.getElementById('chunkSize').value);
+            if (isNaN(chunkMB) || chunkMB < 0.1) {
+                alert('Размер части должен быть не менее 0.1 МБ. Установлено значение 9 МБ.');
+                chunkMB = 9;
+                document.getElementById('chunkSize').value = 9;
+            }
+            
+            const chunkSize = chunkMB * 1024 * 1024;
+            const chunksCount = Math.ceil(file.size / chunkSize);
+            
+            // Определяем базовое имя и расширение
+            const lastDot = file.name.lastIndexOf('.');
+            const baseName = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
+            const ext = lastDot !== -1 ? file.name.substring(lastDot) : ''; // точка включена
+
+            progressDiv.style.display = 'block';
+            progressDiv.innerHTML = `⏳ Разбиваем на ${chunksCount} частей по ${chunkMB} МБ...<br>
+                <span class="warning">🔒 Части будут зашифрованы — их нельзя открыть отдельно.</span>`;
+            
+            // Блокируем кнопку на время работы
+            splitBtn.disabled = true;
+            splitBtn.textContent = 'Разбивка...';
+
+            try {
+                for (let i = 0; i < chunksCount; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    // Читаем содержимое чанка как ArrayBuffer
+                    const arrayBuf = await chunk.arrayBuffer();
+                    // Шифруем XOR
+                    xorBuffer(arrayBuf);
+                    // Создаём новый Blob из зашифрованных данных
+                    const encryptedBlob = new Blob([arrayBuf], { type: 'application/octet-stream' });
+
+                    const partNum = String(i + 1).padStart(3, '0');
+                    // Формат: basename_part001.ext
+                    const fileName = `${baseName}_part${partNum}${ext}`;
+
+                    // Создаём URL и сохраняем для последующей очистки
+                    const url = URL.createObjectURL(encryptedBlob);
+                    createdURLs.push(url);
+
+                    const chunkSizeMB = (chunk.size / 1024 / 1024).toFixed(2);
+
+                    // Создаём элемент для отображения части
+                    const div = document.createElement('div');
+                    div.className = 'chunk';
+                    div.innerHTML = `
+                        <div class="chunk-info">
+                            <strong>📄 Часть ${i + 1}/${chunksCount}</strong> — ${chunkSizeMB} МБ (зашифрована)<br>
+                            <span style="font-size: 0.9em; color: #555;">${fileName}</span>
+                            <div class="encrypted-note">🔒 Не пытайтесь открыть — файл нечитаем. НЕ РАЗБИВАЙТЕ ПОВТОРНО!</div>
+                        </div>
+                    `;
+
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    link.className = 'download-link';
+                    link.textContent = '⬇️ Скачать';
+                    link.title = `Скачать ${fileName} (зашифрованная часть)`;
+
+                    // Отслеживаем скачивание
+                    link.addEventListener('click', function(e) {
+                        setTimeout(() => {
+                            link.textContent = '✅ Скачано';
+                            link.classList.add('downloaded');
+                        }, 300);
+                    });
+
+                    div.appendChild(link);
+                    resultDiv.appendChild(div);
+
+                    // Обновляем прогресс
+                    progressDiv.innerHTML = `⏳ Обработано ${i + 1} из ${chunksCount} частей...<br>
+                        <span class="warning">🔒 Части зашифрованы.</span>`;
+
+                    // Даём браузеру отрисовать изменения
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+
+                progressDiv.innerHTML = `<span class="success">✅ Разбиение успешно завершено! Всего частей: ${chunksCount}</span><br>
+                    <small>Все части зашифрованы. Для восстановления исходного файла используйте функцию сборки. НЕ РАЗБИВАЙТЕ ЭТИ ЧАСТИ ПОВТОРНО!</small>`;
+            } catch (error) {
+                console.error('Ошибка при разбивке:', error);
+                progressDiv.innerHTML = `<span style="color: red;">❌ Произошла ошибка: ${error.message}</span>`;
+            } finally {
+                splitBtn.disabled = false;
+                splitBtn.textContent = '✂️ Разбить файл на части';
+            }
+        }
+
+        // ====================== СБОРКА ======================
+        async function mergeFiles() {
+            const input = document.getElementById('mergeInput');
+            const files = Array.from(input.files);
+            
+            if (files.length === 0) {
+                alert('Пожалуйста, выберите все части файла для сборки.');
+                return;
+            }
+
+            if (files.length < 2) {
+                alert('Для сборки необходимо выбрать как минимум 2 части файла.');
+                return;
+            }
+
+            const progressDiv = document.getElementById('mergeProgress');
+            const resultDiv = document.getElementById('mergeResult');
+            const mergeBtn = document.getElementById('mergeBtn');
+            
+            // Очищаем предыдущие результаты
+            revokeAllURLs();
+            resultDiv.innerHTML = '';
+            
+            progressDiv.style.display = 'block';
+            progressDiv.textContent = '🔍 Сортируем и проверяем части...';
+
+            // Сортируем файлы по номеру части в имени
+            files.sort((a, b) => {
+                const numA = (a.name.match(/_part(\d+)/) || [])[1];
+                const numB = (b.name.match(/_part(\d+)/) || [])[1];
+                const intA = numA ? parseInt(numA, 10) : 0;
+                const intB = numB ? parseInt(numB, 10) : 0;
+                return intA - intB;
+            });
+
+            mergeBtn.disabled = true;
+            mergeBtn.textContent = 'Сборка...';
+
+            try {
+                const chunks = [];
+                let totalSize = 0;
+                
+                for (let i = 0; i < files.length; i++) {
+                    const buffer = await files[i].arrayBuffer();
+                    // Расшифровываем XOR (обратимая операция)
+                    xorBuffer(buffer);
+                    chunks.push(buffer);
+                    totalSize += buffer.byteLength;
+                    progressDiv.textContent = `⏳ Чтение и расшифровка частей: ${i + 1} из ${files.length} (${files[i].name})`;
+                }
+
+                progressDiv.textContent = '🧩 Объединяем данные...';
+                
+                // Создаём итоговый Blob
+                const finalBlob = new Blob(chunks);
+                const url = URL.createObjectURL(finalBlob);
+                createdURLs.push(url);
+
+                // Определяем оригинальное имя файла
+                const firstFileName = files[0].name;
+                // Удаляем _partNNN из имени
+                const originalName = firstFileName.replace(/_part\d+/, '');
+                
+                // Проверяем, изменилось ли имя
+                const finalName = (originalName !== firstFileName && originalName) 
+                    ? originalName 
+                    : `восстановленный_${firstFileName}`;
+
+                const finalSizeMB = (finalBlob.size / 1024 / 1024).toFixed(2);
+
+                // Отображаем результат
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'chunk';
+                wrapperDiv.style.borderLeftColor = '#2d7d46';
+                wrapperDiv.innerHTML = `
+                    <div class="chunk-info">
+                        <span class="success">✅ Файл успешно собран и расшифрован!</span><br>
+                        <strong>📦 ${finalName}</strong><br>
+                        <small>Размер: ${finalSizeMB} МБ (из ${files.length} частей)</small>
+                    </div>
+                `;
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = finalName;
+                link.className = 'download-link';
+                link.textContent = `⬇️ Скачать (${finalSizeMB} МБ)`;
+                link.title = `Скачать восстановленный файл ${finalName}`;
+                
+                link.addEventListener('click', function() {
+                    setTimeout(() => {
+                        link.textContent = '✅ Скачано';
+                        link.classList.add('downloaded');
+                    }, 300);
+                });
+
+                wrapperDiv.appendChild(link);
+                resultDiv.appendChild(wrapperDiv);
+                
+                progressDiv.innerHTML = `<span class="success">✅ Готово! Файл собран из ${files.length} частей.</span>`;
+                
+            } catch (error) {
+                console.error('Ошибка при сборке:', error);
+                progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка сборки: ${error.message}</span>`;
+            } finally {
+                mergeBtn.disabled = false;
+                mergeBtn.textContent = '🧩 Собрать файл обратно';
+            }
+        }
+
+        // Очищаем URL при уходе со страницы (хорошая практика)
+        window.addEventListener('beforeunload', () => {
+            revokeAllURLs();
+        });
+    </script>
+</body>
+</html>
