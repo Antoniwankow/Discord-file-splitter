@@ -22,6 +22,31 @@
             margin: 25px 0; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
+        .warning-section {
+            background: #fff3cd;
+            border: 2px solid #ff6b6b;
+            border-left: 6px solid #ff6b6b;
+            color: #b85c00;
+        }
+        .warning-section h2 {
+            color: #ff6b6b;
+            margin-top: 0;
+        }
+        .warning-section strong {
+            color: #ff6b6b;
+        }
+        .warning-example {
+            background: #ffe0e0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+        .warning-correct {
+            background: #e0ffe0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
         h2 { margin-top: 0; font-weight: 500; }
         label { font-weight: 600; display: block; margin-bottom: 5px; }
         input[type="number"] { 
@@ -94,6 +119,35 @@
 <body>
     <h1>🔧 Разбиватель + Сборщик для Discord</h1>
 
+    <!-- ПРЕДУПРЕЖДЕНИЕ -->
+    <div class="section warning-section">
+        <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h2>
+        <p><strong>Не разделяйте разделённые файлы повторно!</strong></p>
+        
+        <p>После того, как вы разбили файл на части (например, <code>file_part001.dat</code>, <code>file_part002.dat</code> и т.д.), эти части <strong>нельзя разбивать заново</strong>.</p>
+        
+        <div class="warning-example">
+            <strong>❌ Неправильно:</strong>
+            <ul>
+                <li>Отправить <code>file_part001.dat</code> через Discord</li>
+                <li>Получатель разбивает <code>file_part001.dat</code> ещё раз</li>
+                <li>При сборке файл будет повреждён и нечитаем</li>
+            </ul>
+        </div>
+        
+        <div class="warning-correct">
+            <strong>✅ Правильно:</strong>
+            <ul>
+                <li>Разделите исходный файл на части</li>
+                <li>Отправьте ВСЕ части получателю</li>
+                <li>Получатель собирает их обратно в исходный файл</li>
+                <li>Если нужно снова разбить, разбивайте уже собранный исходный файл</li>
+            </ul>
+        </div>
+        
+        <p><strong style="color: #ff6b6b;">⚠️ Результат повторного разбиения:</strong> Потеря данных, невозможность восстановления файла при сборке.</p>
+    </div>
+
     <!-- Разбивка -->
     <div class="section">
         <h2>1. Разбить большой файл</h2>
@@ -115,7 +169,7 @@
         <h2>2. Собрать файл из частей</h2>
         <label for="mergeInput">Выберите все части файла:</label>
         <input type="file" id="mergeInput" multiple />
-        <small>⚠️ Убедитесь, что выбраны все части и порядок соблюдён (файлы сортируются автоматически по номеру части)</small>
+        <small>⚠️ Убедитесь, что выбраны все части и порядок соблюдён (файлы сортируются автоматически по номеру)</small>
         
         <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать файл обратно</button>
         <div id="mergeProgress" class="progress-info" style="display: none;"></div>
@@ -214,7 +268,7 @@
                         <div class="chunk-info">
                             <strong>📄 Часть ${i + 1}/${chunksCount}</strong> — ${chunkSizeMB} МБ (зашифрована)<br>
                             <span style="font-size: 0.9em; color: #555;">${fileName}</span>
-                            <div class="encrypted-note">🔒 Не пытайтесь открыть — файл нечитаем</div>
+                            <div class="encrypted-note">🔒 Не пытайтесь открыть — файл нечитаем. НЕ РАЗБИВАЙТЕ ПОВТОРНО!</div>
                         </div>
                     `;
 
@@ -245,7 +299,7 @@
                 }
 
                 progressDiv.innerHTML = `<span class="success">✅ Разбиение успешно завершено! Всего частей: ${chunksCount}</span><br>
-                    <small>Все части зашифрованы. Для восстановления исходного файла используйте функцию сборки.</small>`;
+                    <small>Все части зашифрованы. Для восстановления исходного файла используйте функцию сборки. НЕ РАЗБИВАЙТЕ ЭТИ ЧАСТИ ПОВТОРНО!</small>`;
             } catch (error) {
                 console.error('Ошибка при разбивке:', error);
                 progressDiv.innerHTML = `<span style="color: red;">❌ Произошла ошибка: ${error.message}</span>`;
