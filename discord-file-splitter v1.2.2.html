@@ -84,7 +84,7 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .chunk-info { flex-grow: 1; }
+        .chunk-info { flex-grow: 1; min-width: 200px; }
         .success { color: #2d7d46; font-weight: bold; }
         .warning { color: #b85c00; font-weight: bold; }
         .download-link { 
@@ -100,6 +100,12 @@
         .download-link.downloaded { 
             background: #2d7d46; 
             pointer-events: none; 
+        }
+        .chunk-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
         }
         .progress-info {
             margin: 15px 0;
@@ -130,6 +136,13 @@
         }
         .warning-top-link:hover {
             background: #ffe69c;
+        }
+        .download-all-btn {
+            background: #28a745;
+            margin-top: 15px;
+        }
+        .download-all-btn:hover {
+            background: #218838;
         }
     </style>
 </head>
@@ -245,6 +258,9 @@
             splitBtn.disabled = true;
             splitBtn.textContent = 'Разбивка...';
 
+            // Массив для хранения ссылок скачивания
+            const downloadLinks = [];
+
             try {
                 for (let i = 0; i < chunksCount; i++) {
                     const start = i * chunkSize;
@@ -262,6 +278,8 @@
                     createdURLs.push(url);
 
                     const chunkSizeMB = (chunk.size / 1024 / 1024).toFixed(2);
+                    
+                    // Создаём карточку части
                     const div = document.createElement('div');
                     div.className = 'chunk';
                     div.innerHTML = `
@@ -270,26 +288,45 @@
                             <span style="font-size: 0.9em; color: #555;">${fileName}</span>
                             <div class="encrypted-note">🔒 Не пытайтесь открыть. Расширение .part. НЕ РАЗБИВАЙТЕ ПОВТОРНО!</div>
                         </div>
+                        <div class="chunk-actions">
+                            <a href="${url}" download="${fileName}" class="download-link">⬇️ Скачать</a>
+                        </div>
                     `;
 
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileName;
-                    link.className = 'download-link';
-                    link.textContent = '⬇️ Скачать';
-                    link.addEventListener('click', function() {
+                    const downloadLink = div.querySelector('.download-link');
+                    downloadLink.addEventListener('click', function() {
                         setTimeout(() => {
-                            link.textContent = '✅ Скачано';
-                            link.classList.add('downloaded');
+                            downloadLink.textContent = '✅ Скачано';
+                            downloadLink.classList.add('downloaded');
                         }, 300);
                     });
 
-                    div.appendChild(link);
                     resultDiv.appendChild(div);
+                    downloadLinks.push(downloadLink);
 
                     progressDiv.innerHTML = `⏳ Обработано ${i + 1} из ${chunksCount} частей...<br>
                         <span class="warning">🔒 Части зашифрованы (${PART_EXT}).</span>`;
                     await new Promise(resolve => setTimeout(resolve, 20));
+                }
+
+                // Кнопка "Скачать все" только если частей > 1
+                if (chunksCount > 1) {
+                    const downloadAllDiv = document.createElement('div');
+                    downloadAllDiv.style.textAlign = 'center';
+                    downloadAllDiv.style.marginTop = '15px';
+                    const downloadAllBtn = document.createElement('button');
+                    downloadAllBtn.className = 'download-all-btn';
+                    downloadAllBtn.textContent = `⬇️ Скачать все части (${chunksCount} шт.)`;
+                    downloadAllBtn.addEventListener('click', async () => {
+                        for (let link of downloadLinks) {
+                            if (!link.classList.contains('downloaded')) {
+                                link.click();
+                                await new Promise(r => setTimeout(r, 500));
+                            }
+                        }
+                    });
+                    downloadAllDiv.appendChild(downloadAllBtn);
+                    resultDiv.appendChild(downloadAllDiv);
                 }
 
                 progressDiv.innerHTML = `<span class="success">✅ Разбиение завершено! Всего частей: ${chunksCount}</span><br>
@@ -303,7 +340,7 @@
             }
         }
 
-        // ====================== СБОРКА (теперь поддерживает 1 файл) ======================
+        // ====================== СБОРКА ======================
         async function mergeFiles() {
             const input = document.getElementById('mergeInput');
             const files = Array.from(input.files);
@@ -319,7 +356,6 @@
             progressDiv.style.display = 'block';
             progressDiv.textContent = '🔍 Сортируем части...';
 
-            // Сортировка даже для одного файла работает
             files.sort((a, b) => {
                 const numA = (a.name.match(/_part(\d+)/) || [])[1];
                 const numB = (b.name.match(/_part(\d+)/) || [])[1];
@@ -333,7 +369,7 @@
                 const chunks = [];
                 for (let i = 0; i < files.length; i++) {
                     const buffer = await files[i].arrayBuffer();
-                    xorBuffer(buffer);  // расшифровка
+                    xorBuffer(buffer);
                     chunks.push(buffer);
                     progressDiv.textContent = `⏳ Чтение и расшифровка: ${i + 1} из ${files.length} (${files[i].name})`;
                 }
@@ -343,9 +379,7 @@
                 const url = URL.createObjectURL(finalBlob);
                 createdURLs.push(url);
 
-                // Восстановление оригинального имени (работает и для одного файла)
                 const firstFileName = files[0].name;
-                // Удаляем _partNNN.part
                 const originalName = firstFileName.replace(/_part\d+\.part$/, '') || firstFileName;
                 const finalName = (originalName !== firstFileName) ? originalName : `восстановленный_${firstFileName}`;
 
