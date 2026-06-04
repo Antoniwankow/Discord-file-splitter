@@ -63,6 +63,11 @@
             transform: scale(1.1) rotate(45deg);
             background-color: var(--btn-hover-bg);
         }
+        #settingsToggle:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .modal-overlay {
             position: fixed;
@@ -123,6 +128,17 @@
         }
         .theme-btn-inline:hover { background: var(--file-input-hover); }
 
+        /* стили для select */
+        .setting-select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
         h1 { text-align: center; color: #5865F2; }
         .section { 
             background: var(--section-bg);
@@ -146,15 +162,10 @@
             color: var(--text-color);
         }
 
-        .file-upload-wrapper {
-            margin: 12px 0 6px 0;
-            width: 100%;
-        }
+        .file-upload-wrapper { margin: 12px 0 6px 0; width: 100%; }
 
         .file-upload-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; gap: 10px;
             padding: 12px 18px;
             background-color: var(--file-input-bg);
             border: 2px dashed var(--border-color);
@@ -168,69 +179,40 @@
             user-select: none;
         }
 
-        .file-upload-label:hover {
-            background-color: var(--file-input-hover);
-            border-color: #5865F2;
-        }
-
+        .file-upload-label:hover { background-color: var(--file-input-hover); border-color: #5865F2; }
         .file-upload-label.drag-over {
             background-color: var(--file-input-hover);
             border-color: #5865F2;
             box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
         }
 
-        .file-upload-icon {
-            font-size: 20px;
-        }
+        .file-upload-icon { font-size: 20px; }
 
         .file-name-text {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 14px;
-            opacity: 0.9;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-size: 14px; opacity: 0.9;
         }
 
-        .file-upload-input {
-            position: absolute;
-            width: 0;
-            height: 0;
-            opacity: 0;
-            overflow: hidden;
-        }
-
+        .file-upload-input { position: absolute; width: 0; height: 0; opacity: 0; overflow: hidden; }
         .file-upload-input:focus + .file-upload-label {
             border-color: #5865F2;
             box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
         }
 
         button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline) { 
-            padding: 12px 24px; 
-            font-size: 16px; 
-            margin: 15px 5px 10px 0; 
-            cursor: pointer; 
-            background-color: #5865F2;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            padding: 12px 24px; font-size: 16px; margin: 15px 5px 10px 0; 
+            cursor: pointer; background-color: #5865F2; color: white;
+            border: none; border-radius: 8px; font-weight: 600;
             transition: background-color 0.2s;
         }
         button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):hover { background-color: #4752c4; }
         button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):active { background-color: #3c45a5; }
         button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):disabled { background-color: #8c94e8; cursor: not-allowed; }
-        
+
         .chunk { 
-            background: var(--chunk-bg); 
-            padding: 12px 15px; 
-            margin: 10px 0; 
-            border-radius: 8px;
-            border-left: 4px solid #5865F2;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
+            background: var(--chunk-bg); padding: 12px 15px; margin: 10px 0; 
+            border-radius: 8px; border-left: 4px solid #5865F2;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
             transition: background-color 0.3s;
         }
         .chunk-info { flex-grow: 1; min-width: 200px; }
@@ -238,74 +220,49 @@
         .warning { color: #b85c00; font-weight: bold; }
         body.dark-theme .warning { color: #ff9838; }
         body.dark-theme .success { color: #43b566; }
-        
+
         .download-link { 
-            font-size: 14px; 
-            text-decoration: none; 
-            font-weight: 600; 
-            padding: 6px 12px;
-            background: #5865F2;
-            color: white;
-            border-radius: 6px;
-            white-space: nowrap;
+            font-size: 14px; text-decoration: none; font-weight: 600; 
+            padding: 6px 12px; background: #5865F2; color: white; border-radius: 6px; white-space: nowrap;
         }
-        .download-link.downloaded { 
-            background: #2d7d46; 
-            pointer-events: none; 
-        }
-        .chunk-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .download-link.downloaded { background: #2d7d46; pointer-events: none; }
+        .chunk-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .progress-info {
-            margin: 15px 0;
-            padding: 10px;
-            background: var(--progress-bg);
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background-color 0.3s;
+            margin: 15px 0; padding: 10px; background: var(--progress-bg);
+            border-radius: 6px; font-weight: 500; transition: background-color 0.3s;
         }
         small { color: var(--small-color); display: block; margin-top: 4px; }
-        .encrypted-note {
-            font-size: 0.8em;
-            color: var(--warning-text);
-            margin-top: 4px;
-        }
-        .download-all-btn {
-            background: #28a745 !important;
-            margin: 5px 0 15px 0 !important;
-            width: 100%;
-        }
-        .download-all-btn:hover {
-            background: #218838 !important;
-        }
-        #chunksList {
-            margin-top: 10px;
-        }
+        .encrypted-note { font-size: 0.8em; color: var(--warning-text); margin-top: 4px; }
+        .download-all-btn { background: #28a745 !important; margin: 5px 0 10px 0 !important; width: 100%; }
+        .download-all-btn:hover { background: #218838 !important; }
+        .zip-btn { background: #9b59b6 !important; margin: 5px 0 15px 0 !important; width: 100%; }
+        .zip-btn:hover { background: #8e44ad !important; }
+        #chunksList { margin-top: 10px; }
         .inline-error {
-            color: #ff4444;
-            font-weight: bold;
-            background: #ffeeee;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 10px;
-            display: inline-block;
+            color: #ff4444; font-weight: bold; background: #ffeeee;
+            padding: 8px 12px; border-radius: 6px; margin-top: 10px; display: inline-block;
         }
         .auto-indicator {
-            color: #2d7d46;
-            font-weight: 600;
-            background: #e0ffe0;
-            padding: 6px 12px;
-            border-radius: 6px;
-            margin: 10px 0;
-            display: inline-block;
-            font-size: 0.9em;
+            color: #2d7d46; font-weight: 600; background: #e0ffe0;
+            padding: 6px 12px; border-radius: 6px; margin: 10px 0; display: inline-block; font-size: 0.9em;
         }
-        body.dark-theme .auto-indicator {
-            background: #2d4d33;
-            color: #43b566;
+        body.dark-theme .auto-indicator { background: #2d4d33; color: #43b566; }
+
+        .progress-bar-container {
+            width: 100%; height: 20px; background: #e0e0e0;
+            border-radius: 10px; margin: 15px 0 5px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; width: 0%; background: #5865F2;
+            border-radius: 10px; transition: width 0.2s ease;
+        }
+        .cancel-btn {
+            background: #ff4444 !important;
+            margin-left: 10px;
+        }
+        .cancel-btn:hover { background: #cc0000 !important; }
+        .split-actions-row {
+            display: flex; align-items: center; flex-wrap: wrap;
         }
     </style>
 </head>
@@ -316,34 +273,39 @@
         <div class="modal-window" onclick="event.stopPropagation()">
             <button class="modal-close" onclick="closeModal(null)">✕</button>
             <h3 class="modal-title">⚙️ Настройки</h3>
-            
             <div class="setting-item">
                 <span class="setting-label" onclick="toggleTheme()">Тема интерфейса:</span>
                 <button id="themeBtnText" class="theme-btn-inline" onclick="toggleTheme()">Светлая 🌙</button>
             </div>
-            
             <div class="setting-item">
                 <label for="autoDownloadSplit" class="setting-label">Авто-скачивание всех частей после разделения</label>
                 <input type="checkbox" id="autoDownloadSplit" class="setting-checkbox" onchange="saveSettings(); updateAutoIndicators();">
             </div>
-            
             <div class="setting-item">
                 <label for="autoDownloadMerge" class="setting-label">Авто-скачивание готового файла после сборки</label>
                 <input type="checkbox" id="autoDownloadMerge" class="setting-checkbox" onchange="saveSettings(); updateAutoIndicators();">
+            </div>
+            <div class="setting-item">
+                <label for="hideChunksList" class="setting-label">Скрыть список разделённых частей</label>
+                <input type="checkbox" id="hideChunksList" class="setting-checkbox" onchange="saveSettings()">
+            </div>
+            <div class="setting-item">
+                <label for="downloadButtonsMode" class="setting-label">Отображение кнопок скачивания</label>
+                <select id="downloadButtonsMode" class="setting-select" onchange="saveSettings()">
+                    <option value="both">Скачать все части / скачать ZIP-архив</option>
+                    <option value="all">Скачать все части</option>
+                    <option value="zip">Скачать ZIP-архив</option>
+                </select>
             </div>
         </div>
     </div>
 
     <h1>🔧 Разделитель + Сборщик для Discord</h1>
 
-    <!-- Индикаторы автоскачивания -->
-    <div id="splitAutoIndicator" class="auto-indicator" style="display: none;">
-        ⚡ Автоскачивание включено — части загрузятся автоматически
-    </div>
+    <div id="splitAutoIndicator" class="auto-indicator" style="display: none;">⚡ Автоскачивание включено — части загрузятся автоматически</div>
 
     <div class="section" id="splitSection">
         <h2>1. Разделить большой файл</h2>
-        
         <label for="chunkSize" class="input-title">Размер одной части (МБ):</label>
         <input type="number" id="chunkSize" value="9" min="0.1" max="50" step="0.5">
         <small>Рекомендуется 8–9 МБ для Discord (макс. 10 МБ для обычных пользователей)</small>
@@ -358,16 +320,17 @@
         </div>
         <small style="color:var(--warning-text);">🔸 Все части получат расширение <strong>.part</strong> (не исходное)</small>
         
-        <button id="splitBtn" onclick="splitFile()">✂️ Разделить файл на части</button>
-        <div id="splitProgress" class="progress-info" style="display: none;"></div>
+        <div class="split-actions-row">
+            <button id="splitBtn" onclick="splitFile()">✂️ Разделить файл на части</button>
+            <button id="cancelSplitBtn" class="cancel-btn" style="display: none;" onclick="cancelSplit()">❌ Отмена</button>
+        </div>
         
+        <div id="splitProgress" class="progress-info" style="display: none;"></div>
         <div id="splitActionsContainer"></div>
         <div id="chunksList"></div>
     </div>
 
-    <div id="mergeAutoIndicator" class="auto-indicator" style="display: none;">
-        ⚡ Автоскачивание включено — готовый файл загрузится автоматически
-    </div>
+    <div id="mergeAutoIndicator" class="auto-indicator" style="display: none;">⚡ Автоскачивание включено — готовый файл загрузится автоматически</div>
 
     <div class="section" id="mergeSection">
         <h2>2. Собрать файл из частей</h2>
@@ -380,7 +343,6 @@
             </label>
         </div>
         <small>⚠️ Работает даже с одним файлом — это позволяет обойти сжатие Discord для небольших файлов.</small>
-        
         <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать / расшифровать</button>
         <div id="mergeProgress" class="progress-info" style="display: none;"></div>
         <div id="mergeResult"></div>
@@ -394,13 +356,15 @@
         const autoDownloadMergeCheck = document.getElementById('autoDownloadMerge');
         const splitAutoIndicator = document.getElementById('splitAutoIndicator');
         const mergeAutoIndicator = document.getElementById('mergeAutoIndicator');
+        const hideChunksListCheck = document.getElementById('hideChunksList');
+        const downloadButtonsModeSelect = document.getElementById('downloadButtonsMode');
         
         function updateAutoIndicators() {
             splitAutoIndicator.style.display = autoDownloadSplitCheck.checked ? 'inline-block' : 'none';
             mergeAutoIndicator.style.display = autoDownloadMergeCheck.checked ? 'inline-block' : 'none';
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
+        function loadSettings() {
             const savedTheme = localStorage.getItem('app-theme') || 'light';
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-theme');
@@ -411,8 +375,13 @@
 
             autoDownloadSplitCheck.checked = localStorage.getItem('auto-download-split') === 'true';
             autoDownloadMergeCheck.checked = localStorage.getItem('auto-download-merge') === 'true';
+            hideChunksListCheck.checked = localStorage.getItem('hide-chunks-list') === 'true';
+            downloadButtonsModeSelect.value = localStorage.getItem('download-buttons-mode') || 'both';
+
             updateAutoIndicators();
-        });
+        }
+
+        document.addEventListener("DOMContentLoaded", loadSettings);
 
         function openModal() { modal.classList.add('active'); }
         function closeModal(e) { if (!e || e.target === modal) modal.classList.remove('active'); }
@@ -431,22 +400,17 @@
         function saveSettings() {
             localStorage.setItem('auto-download-split', autoDownloadSplitCheck.checked);
             localStorage.setItem('auto-download-merge', autoDownloadMergeCheck.checked);
+            localStorage.setItem('hide-chunks-list', hideChunksListCheck.checked);
+            localStorage.setItem('download-buttons-mode', downloadButtonsModeSelect.value);
         }
 
         function updateFileName(input, targetId) {
             const labelSpan = document.getElementById(targetId);
             if (input.files && input.files.length > 0) {
-                if (input.files.length === 1) {
-                    labelSpan.textContent = input.files[0].name;
-                } else {
-                    labelSpan.textContent = `Выбрано файлов: ${input.files.length}`;
-                }
+                if (input.files.length === 1) labelSpan.textContent = input.files[0].name;
+                else labelSpan.textContent = `Выбрано файлов: ${input.files.length}`;
             } else {
-                if (targetId === 'splitInputText') {
-                    labelSpan.textContent = 'Перетащите файл или кликните для выбора';
-                } else {
-                    labelSpan.textContent = 'Выберите одну или несколько частей .part';
-                }
+                labelSpan.textContent = targetId === 'splitInputText' ? 'Перетащите файл или кликните для выбора' : 'Выберите одну или несколько частей .part';
             }
         }
 
@@ -455,7 +419,6 @@
             const dropZone = document.getElementById(dropZoneId);
             const input = document.getElementById(inputId);
             const label = document.getElementById(labelId);
-
             if (!dropZone || !input || !label) return;
 
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -463,46 +426,33 @@
                 document.body.addEventListener(eventName, preventDefaults, false);
             });
 
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
 
             ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => {
-                    label.classList.add('drag-over');
-                }, false);
+                dropZone.addEventListener(eventName, () => label.classList.add('drag-over'), false);
             });
-
             ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => {
-                    label.classList.remove('drag-over');
-                }, false);
+                dropZone.addEventListener(eventName, () => label.classList.remove('drag-over'), false);
             });
 
             dropZone.addEventListener('drop', (e) => {
                 const files = e.dataTransfer.files;
                 if (files.length === 0) return;
-
                 const dt = new DataTransfer();
                 if (input.multiple) {
-                    for (let file of files) {
-                        dt.items.add(file);
-                    }
+                    for (let file of files) dt.items.add(file);
                 } else {
                     dt.items.add(files[0]);
                 }
                 input.files = dt.files;
-
                 const targetTextId = inputId === 'splitInput' ? 'splitInputText' : 'mergeInputText';
                 updateFileName(input, targetTextId);
             });
         }
-
         setupDragDrop('splitDropZone', 'splitInput', 'splitLabel');
         setupDragDrop('mergeDropZone', 'mergeInput', 'mergeLabel');
 
-        // ====================== ЛОГИКА ОБРАБОТКИ ФАЙЛОВ ======================
+        // ====================== ЛОГИКА ОБРАБОТКИ ======================
         const createdURLs = [];
         function revokeAllURLs() {
             createdURLs.forEach(url => URL.revokeObjectURL(url));
@@ -512,13 +462,10 @@
         const XOR_KEY = 0x5A;
         function xorBuffer(buffer) {
             const bytes = new Uint8Array(buffer);
-            for (let i = 0; i < bytes.length; i++) {
-                bytes[i] ^= XOR_KEY;
-            }
+            for (let i = 0; i < bytes.length; i++) bytes[i] ^= XOR_KEY;
             return buffer;
         }
 
-        // Запускает скачивание массива ссылок (имитирует клик)
         async function triggerDownloads(linksArray) {
             for (let link of linksArray) {
                 if (!link.classList.contains('downloaded')) {
@@ -528,15 +475,135 @@
             }
         }
 
+        let currentAbortController = null;
+        let currentChunksData = [];
+        let currentBaseName = '';
+        let currentOriginalExt = '';
+
+        function cancelSplit() {
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+        }
+
+        function setSettingsEnabled(enabled) {
+            document.getElementById('settingsToggle').disabled = !enabled;
+        }
+
+        // ====================== ZIP-УПАКОВЩИК ======================
+        function createZip(files) {
+            const encoder = new TextEncoder();
+            const centralDir = [];
+            const localHeaders = [];
+            let offset = 0;
+
+            for (const file of files) {
+                const nameBytes = encoder.encode(file.name);
+                const data = file.data;
+                const crc = 0;
+                const size = data.size;
+
+                const localHeader = new Uint8Array(30 + nameBytes.length);
+                const view = new DataView(localHeader.buffer);
+                view.setUint32(0, 0x04034b50, true);
+                view.setUint16(4, 20, true);
+                view.setUint16(6, 0x0800, true);
+                view.setUint16(8, 0, true);
+                view.setUint16(10, 0, true);
+                view.setUint16(12, 0, true);
+                view.setUint32(14, crc, true);
+                view.setUint32(18, size, true);
+                view.setUint32(22, size, true);
+                view.setUint16(26, nameBytes.length, true);
+                view.setUint16(28, 0, true);
+                localHeader.set(nameBytes, 30);
+
+                localHeaders.push({ header: localHeader, data: data });
+
+                const cdEntry = new Uint8Array(46 + nameBytes.length);
+                const cdView = new DataView(cdEntry.buffer);
+                cdView.setUint32(0, 0x02014b50, true);
+                cdView.setUint16(4, 20, true);
+                cdView.setUint16(6, 20, true);
+                cdView.setUint16(8, 0x0800, true);
+                cdView.setUint16(10, 0, true);
+                cdView.setUint16(12, 0, true);
+                cdView.setUint16(14, 0, true);
+                cdView.setUint32(16, crc, true);
+                cdView.setUint32(20, size, true);
+                cdView.setUint32(24, size, true);
+                cdView.setUint16(28, nameBytes.length, true);
+                cdView.setUint16(30, 0, true);
+                cdView.setUint16(32, 0, true);
+                cdView.setUint16(34, 0, true);
+                cdView.setUint16(36, 0, true);
+                cdView.setUint32(38, 0, true);
+                cdView.setUint32(42, offset, true);
+                cdEntry.set(nameBytes, 46);
+                centralDir.push(cdEntry);
+
+                offset += localHeader.byteLength + size;
+            }
+
+            const cdOffset = offset;
+            const cdSize = centralDir.reduce((sum, e) => sum + e.byteLength, 0);
+            const eocd = new Uint8Array(22);
+            const eocdView = new DataView(eocd.buffer);
+            eocdView.setUint32(0, 0x06054b50, true);
+            eocdView.setUint16(4, 0, true);
+            eocdView.setUint16(6, 0, true);
+            eocdView.setUint16(8, files.length, true);
+            eocdView.setUint16(10, files.length, true);
+            eocdView.setUint32(12, cdSize, true);
+            eocdView.setUint32(16, cdOffset, true);
+            eocdView.setUint16(20, 0, true);
+
+            const parts = [];
+            for (const lh of localHeaders) {
+                parts.push(lh.header);
+                parts.push(lh.data);
+            }
+            for (const cd of centralDir) {
+                parts.push(cd);
+            }
+            parts.push(eocd);
+
+            return new Blob(parts, { type: 'application/zip' });
+        }
+
+        async function downloadZip() {
+            if (currentChunksData.length === 0) {
+                alert('Нет данных для архивации.');
+                return;
+            }
+
+            const files = currentChunksData.map(part => ({
+                name: part.fileName,
+                data: part.blob
+            }));
+
+            const zipName = currentBaseName + (currentOriginalExt ? currentOriginalExt : '') + '_parts.zip';
+            const zipBlob = createZip(files);
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = zipName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
+
         // ====================== РАЗДЕЛЕНИЕ ======================
         async function splitFile() {
             const fileInput = document.getElementById('splitInput');
             const file = fileInput.files[0];
             if (!file) return alert('Пожалуйста, сначала выберите файл для разделения.');
 
-            // Запрет повторного разделения уже разделённых частей
-            const partFilePattern = /_part\d+\.part$/i;
-            if (partFilePattern.test(file.name)) {
+            if (/_part\d+\.part$/i.test(file.name)) {
                 const progressDiv = document.getElementById('splitProgress');
                 progressDiv.style.display = 'block';
                 progressDiv.innerHTML = `<span class="inline-error">❌ ОШИБКА: Этот файл уже является частью (${file.name}). Повторное разделение запрещено!</span>`;
@@ -547,10 +614,14 @@
             const actionsDiv = document.getElementById('splitActionsContainer');
             const chunksListDiv = document.getElementById('chunksList');
             const splitBtn = document.getElementById('splitBtn');
+            const cancelBtn = document.getElementById('cancelSplitBtn');
             
             revokeAllURLs();
             actionsDiv.innerHTML = '';
             chunksListDiv.innerHTML = '';
+            currentChunksData = [];
+            currentBaseName = '';
+            currentOriginalExt = '';
             
             let chunkMB = parseFloat(document.getElementById('chunkSize').value);
             if (isNaN(chunkMB) || chunkMB < 0.1) {
@@ -567,19 +638,39 @@
             const originalExt = lastDot !== -1 ? file.name.substring(lastDot) : '';
             const PART_EXT = '.part';
 
+            currentBaseName = baseName;
+            currentOriginalExt = originalExt;
+
+            const abortController = new AbortController();
+            currentAbortController = abortController;
+
             progressDiv.style.display = 'block';
-            progressDiv.innerHTML = `⏳ Разделяем на ${chunksCount} частей по ${chunkMB} МБ...<br>
-                <span class="warning">🔒 Части будут зашифрованы и получат расширение ${PART_EXT}.</span>`;
-            
+            progressDiv.innerHTML = `
+                <div>⏳ Разделяем на ${chunksCount} частей по ${chunkMB} МБ...</div>
+                <div class="progress-bar-container">
+                    <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                <div id="progressPercent" style="text-align:center; margin-top:5px; font-size:0.9em;">0%</div>
+            `;
+            cancelBtn.style.display = 'inline-block';
             splitBtn.disabled = true;
             splitBtn.textContent = 'Разделение...';
+            setSettingsEnabled(false);
 
-            const downloadLinks = [];        // ссылки для ручного скачивания
-            const partFileNames = [];        // имена файлов частей
-            const partURLs = [];             // URL для каждой части
+            const downloadLinks = [];
+            const partFileNames = [];
+            const partURLs = [];
 
             try {
                 for (let i = 0; i < chunksCount; i++) {
+                    if (abortController.signal.aborted) {
+                        revokeAllURLs();
+                        chunksListDiv.innerHTML = '';
+                        currentChunksData = [];
+                        progressDiv.innerHTML = '<span class="warning">❌ Разделение отменено пользователем.</span>';
+                        return;
+                    }
+
                     const start = i * chunkSize;
                     const end = Math.min(start + chunkSize, file.size);
                     const chunk = file.slice(start, end);
@@ -590,15 +681,17 @@
 
                     const partNum = String(i + 1).padStart(3, '0');
                     const fileName = `${baseName}${originalExt}_part${partNum}${PART_EXT}`;
-
                     const url = URL.createObjectURL(encryptedBlob);
                     createdURLs.push(url);
                     partURLs.push(url);
                     partFileNames.push(fileName);
+                    currentChunksData.push({ blob: encryptedBlob, fileName: fileName });
+
+                    const percent = Math.round(((i + 1) / chunksCount) * 100);
+                    document.getElementById('progressBarFill').style.width = `${percent}%`;
+                    document.getElementById('progressPercent').textContent = `${percent}%`;
 
                     const chunkSizeMB = (chunk.size / 1024 / 1024).toFixed(2);
-                    
-                    // Карточка части
                     const div = document.createElement('div');
                     div.className = 'chunk';
                     div.innerHTML = `
@@ -622,26 +715,36 @@
                         });
                         downloadLinks.push(downloadLink);
                     }
-
                     chunksListDiv.appendChild(div);
-
-                    progressDiv.innerHTML = `⏳ Обработано ${i + 1} из ${chunksCount} частей...<br>
-                        <span class="warning">🔒 Части зашифрованы (${PART_EXT}).</span>`;
                     await new Promise(resolve => setTimeout(resolve, 20));
                 }
 
-                // Кнопка "Скачать все" для ручного режима (только если частей > 1 и не авто)
+                // Показать или скрыть список частей согласно настройке
+                chunksListDiv.style.display = hideChunksListCheck.checked ? 'none' : 'block';
+
+                // Кнопки скачивания (если не автоскачивание и частей > 1)
                 if (!autoDownloadSplitCheck.checked && chunksCount > 1) {
-                    const downloadAllBtn = document.createElement('button');
-                    downloadAllBtn.className = 'download-all-btn';
-                    downloadAllBtn.textContent = `⬇️ Скачать все части сразу (${chunksCount} шт.)`;
-                    downloadAllBtn.addEventListener('click', () => triggerDownloads(downloadLinks));
-                    actionsDiv.appendChild(downloadAllBtn);
+                    const mode = downloadButtonsModeSelect.value;
+                    const zipName = currentBaseName + (currentOriginalExt ? currentOriginalExt : '') + '_parts.zip';
+
+                    if (mode === 'all' || mode === 'both') {
+                        const downloadAllBtn = document.createElement('button');
+                        downloadAllBtn.className = 'download-all-btn';
+                        downloadAllBtn.textContent = `⬇️ Скачать все части по отдельности (${chunksCount} шт.)`;
+                        downloadAllBtn.addEventListener('click', () => triggerDownloads(downloadLinks));
+                        actionsDiv.appendChild(downloadAllBtn);
+                    }
+
+                    if (mode === 'zip' || mode === 'both') {
+                        const zipBtn = document.createElement('button');
+                        zipBtn.className = 'zip-btn';
+                        zipBtn.textContent = `🗜️ Скачать ZIP-архив (${zipName})`;
+                        zipBtn.addEventListener('click', () => downloadZip());
+                        actionsDiv.appendChild(zipBtn);
+                    }
                 }
 
-                // Автоскачивание
                 if (autoDownloadSplitCheck.checked) {
-                    // Создаём временные ссылки с правильными именами
                     const tempLinks = [];
                     for (let i = 0; i < partURLs.length; i++) {
                         const a = document.createElement('a');
@@ -652,7 +755,6 @@
                         tempLinks.push(a);
                     }
                     await triggerDownloads(tempLinks);
-                    // Удаляем временные ссылки
                     tempLinks.forEach(a => a.remove());
                 }
 
@@ -660,11 +762,16 @@
                     <small>Все части с расширением .part. Для восстановления используйте сборку.</small>`;
 
             } catch (error) {
-                console.error(error);
-                progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка: ${error.message}</span>`;
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                    progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка: ${error.message}</span>`;
+                }
             } finally {
                 splitBtn.disabled = false;
                 splitBtn.textContent = '✂️ Разделить файл на части';
+                cancelBtn.style.display = 'none';
+                currentAbortController = null;
+                setSettingsEnabled(true);
             }
         }
 
@@ -692,6 +799,7 @@
 
             mergeBtn.disabled = true;
             mergeBtn.textContent = 'Сборка...';
+            setSettingsEnabled(false);
 
             try {
                 const chunks = [];
@@ -713,7 +821,6 @@
 
                 const finalSizeMB = (finalBlob.size / 1024 / 1024).toFixed(2);
                 const partsWord = files.length === 1 ? 'одной части' : `${files.length} частей`;
-
                 const autoDownload = autoDownloadMergeCheck.checked;
 
                 const wrapperDiv = document.createElement('div');
@@ -739,10 +846,8 @@
                 }
 
                 resultDiv.appendChild(wrapperDiv);
-                
                 progressDiv.innerHTML = `<span class="success">✅ Готово! Файл восстановлен как ${finalName}.</span>`;
 
-                // Автоскачивание готового файла
                 if (autoDownload) {
                     const tempLink = document.createElement('a');
                     tempLink.href = url;
@@ -750,7 +855,6 @@
                     tempLink.style.display = 'none';
                     document.body.appendChild(tempLink);
                     tempLink.click();
-                    // Удаляем через небольшую задержку
                     setTimeout(() => tempLink.remove(), 1000);
                 }
 
@@ -760,6 +864,7 @@
             } finally {
                 mergeBtn.disabled = false;
                 mergeBtn.textContent = '🧩 Собрать / расшифровать';
+                setSettingsEnabled(true);
             }
         }
 
