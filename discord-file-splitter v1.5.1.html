@@ -128,7 +128,6 @@
         }
         .theme-btn-inline:hover { background: var(--file-input-hover); }
 
-        /* стили для select */
         .setting-select {
             padding: 6px 10px;
             border-radius: 6px;
@@ -597,7 +596,7 @@
             }, 1000);
         }
 
-        // ====================== РАЗДЕЛЕНИЕ ======================
+        // ====================== РАЗДЕЛЕНИЕ (ИСПРАВЛЕНО) ======================
         async function splitFile() {
             const fileInput = document.getElementById('splitInput');
             const file = fileInput.files[0];
@@ -622,6 +621,9 @@
             currentChunksData = [];
             currentBaseName = '';
             currentOriginalExt = '';
+            
+            // ✅ ПРИМЕНЯЕМ ВИДИМОСТЬ СПИСКА ДО ДОБАВЛЕНИЯ ЭЛЕМЕНТОВ
+            chunksListDiv.style.display = hideChunksListCheck.checked ? 'none' : 'block';
             
             let chunkMB = parseFloat(document.getElementById('chunkSize').value);
             if (isNaN(chunkMB) || chunkMB < 0.1) {
@@ -719,9 +721,6 @@
                     await new Promise(resolve => setTimeout(resolve, 20));
                 }
 
-                // Показать или скрыть список частей согласно настройке
-                chunksListDiv.style.display = hideChunksListCheck.checked ? 'none' : 'block';
-
                 // Кнопки скачивания (если не автоскачивание и частей > 1)
                 if (!autoDownloadSplitCheck.checked && chunksCount > 1) {
                     const mode = downloadButtonsModeSelect.value;
@@ -738,7 +737,7 @@
                     if (mode === 'zip' || mode === 'both') {
                         const zipBtn = document.createElement('button');
                         zipBtn.className = 'zip-btn';
-                        zipBtn.textContent = `🗜️ Скачать ZIP-архив (${zipName})`;
+                        zipBtn.textContent = `🗜️ Скачать ZIP-архив`;
                         zipBtn.addEventListener('click', () => downloadZip());
                         actionsDiv.appendChild(zipBtn);
                     }
