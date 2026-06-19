@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Разделитель + Сборщик для Discord</title>
+    <title>Разделитель + Сборщик для Discord v1.6.5</title>
     <style>
         :root {
             --bg-color: #fafafa;
@@ -136,6 +136,182 @@
             color: var(--text-color);
             font-size: 14px;
             cursor: pointer;
+        }
+
+        .preset-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0 4px 0;
+        }
+        .preset-btn {
+            padding: 5px 11px !important;
+            font-size: 13px !important;
+            margin: 0 !important;
+            background-color: var(--file-input-bg) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 6px !important;
+            font-weight: 500 !important;
+            cursor: pointer;
+            transition: background-color 0.15s, border-color 0.15s !important;
+        }
+        .preset-btn:hover {
+            background-color: var(--file-input-hover) !important;
+            border-color: #5865F2 !important;
+        }
+        .preset-btn.active {
+            background-color: #5865F2 !important;
+            color: white !important;
+            border-color: #5865F2 !important;
+        }
+
+        .split-preview {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 5px 12px;
+            background: var(--progress-bg);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+            transition: background-color 0.3s;
+            min-height: 28px;
+        }
+        .split-preview.hidden { display: none; }
+
+        .split-stats-card {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 12px 0 4px 0;
+            padding: 12px 14px;
+            background: var(--chunk-bg);
+            border-radius: 8px;
+            border-left: 4px solid #5865F2;
+            font-size: 14px;
+        }
+        .split-stats-card.hidden { display: none; }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 100px;
+        }
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #5865F2;
+        }
+        body.dark-theme .stat-value { color: #7b8cf5; }
+
+        .parts-check-list {
+            margin: 8px 0;
+            padding: 10px 14px;
+            background: var(--chunk-bg);
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+        .parts-check-list.visible { display: block; }
+
+        .parts-summary {
+            display: none;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 0 0 0;
+            padding: 9px 13px;
+            background: var(--chunk-bg);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .parts-summary.visible { display: flex; }
+        .parts-summary-text { flex: 1; min-width: 0; }
+        .parts-toggle-btn {
+            padding: 4px 10px !important;
+            font-size: 12px !important;
+            margin: 0 !important;
+            background-color: var(--file-input-bg) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 5px !important;
+            font-weight: 500 !important;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background-color 0.15s !important;
+        }
+        .parts-toggle-btn:hover {
+            background-color: var(--file-input-hover) !important;
+        }
+
+        .parts-file-list {
+            margin: 0 0 4px 0;
+            padding: 8px 13px 10px;
+            background: var(--chunk-bg);
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid var(--border-color);
+            font-size: 13px;
+            display: none;
+        }
+        .parts-file-list.open { display: block; }
+
+        .parts-check-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+        }
+        .part-ok { color: #2d7d46; font-weight: 600; }
+        .part-missing { color: #e03131; font-weight: 600; }
+        body.dark-theme .part-ok { color: #43b566; }
+        body.dark-theme .part-missing { color: #ff6b6b; }
+        .parts-gap-warning {
+            margin-top: 8px;
+            padding: 7px 10px;
+            background: #fff3cd;
+            border-radius: 6px;
+            color: #7a5200;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        body.dark-theme .parts-gap-warning {
+            background: #3d2e00;
+            color: #ffbe00;
+        }
+
+        .delay-slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .delay-slider {
+            flex: 1;
+            min-width: 120px;
+            accent-color: #5865F2;
+            cursor: pointer;
+        }
+        .delay-number-input {
+            width: 68px !important;
+            padding: 5px 7px !important;
+            font-size: 14px !important;
+        }
+        .delay-unit {
+            font-size: 13px;
+            opacity: 0.7;
+            white-space: nowrap;
         }
 
         h1 { text-align: center; color: #5865F2; }
@@ -296,6 +472,18 @@
                     <option value="zip">Скачать ZIP-архив</option>
                 </select>
             </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <span class="setting-label" style="cursor:default;">Задержка между скачиванием частей</span>
+                <div class="delay-slider-row" style="width:100%;">
+                    <input type="range" id="downloadDelaySlider" class="delay-slider"
+                        min="100" max="2000" step="10" value="400"
+                        oninput="syncDelayFromSlider(this.value)">
+                    <input type="number" id="downloadDelayInput" class="delay-number-input"
+                        min="100" max="2000" step="10" value="400"
+                        oninput="syncDelayFromInput(this.value)">
+                    <span class="delay-unit">мс</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -306,23 +494,34 @@
     <div class="section" id="splitSection">
         <h2>1. Разделить большой файл</h2>
         <label for="chunkSize" class="input-title">Размер одной части (МБ):</label>
-        <input type="number" id="chunkSize" value="9" min="0.1" max="50" step="0.5">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+            <input type="number" id="chunkSize" value="9" min="0.1" max="500" step="0.5" oninput="updatePreview()">
+            <div class="preset-btns">
+                <button class="preset-btn" onclick="setPreset(9)" title="Обычные пользователи Discord">Обычный · 9 МБ</button>
+                <button class="preset-btn" onclick="setPreset(50)" title="Nitro Basic">Nitro Basic · 50 МБ</button>
+                <button class="preset-btn" onclick="setPreset(500)" title="Nitro">Nitro · 500 МБ</button>
+            </div>
+        </div>
         <small>Рекомендуется 8–9 МБ для Discord (макс. 10 МБ для обычных пользователей)</small>
         
         <label style="margin-top: 15px;" class="input-title">Выберите файл:</label>
         <div class="file-upload-wrapper" id="splitDropZone">
-            <input type="file" id="splitInput" class="file-upload-input" onchange="updateFileName(this, 'splitInputText')" />
+            <input type="file" id="splitInput" class="file-upload-input" onchange="updateFileName(this, 'splitInputText'); updatePreview();" />
             <label for="splitInput" class="file-upload-label" id="splitLabel">
                 <span class="file-upload-icon">📁</span>
                 <span id="splitInputText" class="file-name-text">Перетащите файл или кликните для выбора</span>
             </label>
         </div>
         <small style="color:var(--warning-text);">🔸 Все части получат расширение <strong>.part</strong> (не исходное)</small>
+
+        <div id="splitPreview" class="split-preview hidden"></div>
         
         <div class="split-actions-row">
             <button id="splitBtn" onclick="splitFile()">✂️ Разделить файл на части</button>
             <button id="cancelSplitBtn" class="cancel-btn" style="display: none;" onclick="cancelSplit()">❌ Отмена</button>
         </div>
+
+        <div id="splitStatsCard" class="split-stats-card hidden"></div>
         
         <div id="splitProgress" class="progress-info" style="display: none;"></div>
         <div id="splitActionsContainer"></div>
@@ -335,13 +534,20 @@
         <h2>2. Собрать файл из частей</h2>
         <label class="input-title">Выберите все части файла (расширение .part):</label>
         <div class="file-upload-wrapper" id="mergeDropZone">
-            <input type="file" id="mergeInput" class="file-upload-input" multiple onchange="updateFileName(this, 'mergeInputText')" />
+            <input type="file" id="mergeInput" class="file-upload-input" multiple onchange="updateFileName(this, 'mergeInputText'); checkPartsList();" />
             <label for="mergeInput" class="file-upload-label" id="mergeLabel">
                 <span class="file-upload-icon">🧩</span>
                 <span id="mergeInputText" class="file-name-text">Выберите одну или несколько частей .part</span>
             </label>
         </div>
         <small>⚠️ Работает даже с одним файлом — это позволяет обойти сжатие Discord для небольших файлов.</small>
+
+        <div id="partsSummary" class="parts-summary">
+            <span id="partsSummaryText" class="parts-summary-text"></span>
+            <button class="parts-toggle-btn" id="partsToggleBtn" onclick="togglePartsList()">📋 Показать список</button>
+        </div>
+        <div id="partsFileList" class="parts-file-list"></div>
+
         <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать / расшифровать</button>
         <div id="mergeProgress" class="progress-info" style="display: none;"></div>
         <div id="mergeResult"></div>
@@ -357,6 +563,28 @@
         const mergeAutoIndicator = document.getElementById('mergeAutoIndicator');
         const hideChunksListCheck = document.getElementById('hideChunksList');
         const downloadButtonsModeSelect = document.getElementById('downloadButtonsMode');
+        const downloadDelaySlider = document.getElementById('downloadDelaySlider');
+        const downloadDelayInput = document.getElementById('downloadDelayInput');
+
+        function getDownloadDelay() {
+            return parseInt(downloadDelaySlider.value) || 400;
+        }
+
+        function syncDelayFromSlider(val) {
+            const v = Math.min(2000, Math.max(100, Math.round(parseInt(val) / 10) * 10));
+            downloadDelaySlider.value = v;
+            downloadDelayInput.value = v;
+            saveSettings();
+        }
+
+        function syncDelayFromInput(val) {
+            let v = parseInt(val);
+            if (isNaN(v)) return;
+            v = Math.min(2000, Math.max(100, Math.round(v / 10) * 10));
+            downloadDelaySlider.value = v;
+            downloadDelayInput.value = v;
+            saveSettings();
+        }
         
         function updateAutoIndicators() {
             splitAutoIndicator.style.display = autoDownloadSplitCheck.checked ? 'inline-block' : 'none';
@@ -376,6 +604,10 @@
             autoDownloadMergeCheck.checked = localStorage.getItem('auto-download-merge') === 'true';
             hideChunksListCheck.checked = localStorage.getItem('hide-chunks-list') === 'true';
             downloadButtonsModeSelect.value = localStorage.getItem('download-buttons-mode') || 'both';
+
+            const savedDelay = parseInt(localStorage.getItem('download-delay')) || 400;
+            downloadDelaySlider.value = savedDelay;
+            downloadDelayInput.value = savedDelay;
 
             updateAutoIndicators();
         }
@@ -401,6 +633,7 @@
             localStorage.setItem('auto-download-merge', autoDownloadMergeCheck.checked);
             localStorage.setItem('hide-chunks-list', hideChunksListCheck.checked);
             localStorage.setItem('download-buttons-mode', downloadButtonsModeSelect.value);
+            localStorage.setItem('download-delay', downloadDelaySlider.value);
         }
 
         function updateFileName(input, targetId) {
@@ -411,6 +644,166 @@
             } else {
                 labelSpan.textContent = targetId === 'splitInputText' ? 'Перетащите файл или кликните для выбора' : 'Выберите одну или несколько частей .part';
             }
+        }
+
+        // ====================== ПРЕСЕТЫ РАЗМЕРА ======================
+        function setPreset(mb) {
+            document.getElementById('chunkSize').value = mb;
+            updatePreview();
+            highlightPreset(mb);
+        }
+
+        function highlightPreset(mb) {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('active', parseFloat(btn.getAttribute('data-mb')) === parseFloat(mb));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const presets = [9, 50, 500];
+            document.querySelectorAll('.preset-btn').forEach((btn, i) => {
+                btn.setAttribute('data-mb', presets[i]);
+            });
+            highlightPreset(parseFloat(document.getElementById('chunkSize').value));
+        });
+
+        // ====================== ПРЕДПРОСМОТР КОЛИЧЕСТВА ЧАСТЕЙ ======================
+        function updatePreview() {
+            const fileInput = document.getElementById('splitInput');
+            const preview = document.getElementById('splitPreview');
+            const chunkMB = parseFloat(document.getElementById('chunkSize').value);
+
+            highlightPreset(chunkMB);
+
+            if (!fileInput.files || fileInput.files.length === 0 || isNaN(chunkMB) || chunkMB <= 0) {
+                preview.classList.add('hidden');
+                return;
+            }
+
+            const fileSize = fileInput.files[0].size;
+            const chunkSize = chunkMB * 1024 * 1024;
+            const count = Math.ceil(fileSize / chunkSize);
+            preview.classList.remove('hidden');
+            preview.innerHTML = `✂️ Будет создано частей: <strong>${count}</strong>`;
+        }
+
+        // ====================== ПРОВЕРКА ЧАСТЕЙ ПРИ СБОРКЕ ======================
+        function checkPartsList() {
+            const input = document.getElementById('mergeInput');
+            const summary = document.getElementById('partsSummary');
+            const summaryText = document.getElementById('partsSummaryText');
+            const fileList = document.getElementById('partsFileList');
+            const toggleBtn = document.getElementById('partsToggleBtn');
+
+            fileList.classList.remove('open');
+            toggleBtn.textContent = '📋 Показать список';
+
+            if (!input.files || input.files.length === 0) {
+                summary.classList.remove('visible');
+                summaryText.innerHTML = '';
+                fileList.innerHTML = '';
+                return;
+            }
+
+            const files = Array.from(input.files);
+
+            const newFormat = files
+                .map(f => {
+                    const m = f.name.match(/_part(\d+)of(\d+)\.part$/i);
+                    return m ? { name: f.name, num: parseInt(m[1]), total: parseInt(m[2]) } : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.num - b.num);
+
+            const oldFormat = files
+                .map(f => {
+                    const m = f.name.match(/_part(\d+)\.part$/i);
+                    return (m && !/_part\d+of\d+\.part$/i.test(f.name))
+                        ? { name: f.name, num: parseInt(m[1]), total: null }
+                        : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.num - b.num);
+
+            const numbered = newFormat.length > 0 ? newFormat : oldFormat;
+
+            if (numbered.length === 0) {
+                summary.classList.remove('visible');
+                summaryText.innerHTML = '';
+                fileList.innerHTML = '';
+                return;
+            }
+
+            const presentNums = new Set(numbered.map(f => f.num));
+
+            let expectedTotal = null;
+            if (newFormat.length > 0) {
+                const totals = [...new Set(newFormat.map(f => f.total))];
+                if (totals.length === 1) expectedTotal = totals[0];
+            }
+
+            const rangeMax = expectedTotal !== null ? expectedTotal : numbered[numbered.length - 1].num;
+
+            const missing = [];
+            for (let i = 1; i <= rangeMax; i++) {
+                if (!presentNums.has(i)) missing.push(i);
+            }
+
+            let summaryHtml = '';
+            if (expectedTotal !== null) {
+                summaryHtml += `Загружено: <strong>${numbered.length} из ${expectedTotal}</strong> частей. `;
+            } else {
+                summaryHtml += `Загружено: <strong>${numbered.length}</strong> ${declParts(numbered.length)}. `;
+            }
+
+            if (missing.length > 0) {
+                const missingLabels = missing.map(n => `#${String(n).padStart(3,'0')}`).join(', ');
+                summaryHtml += `<span style="color:#e03131; font-weight:700;">⚠️ Не хватает: ${missingLabels}</span>`;
+            } else if (expectedTotal !== null && numbered.length === expectedTotal) {
+                summaryHtml += `<span style="color:#2d7d46; font-weight:700;">✅ Набор полный</span>`;
+            } else {
+                summaryHtml += `<span style="color:#2d7d46; font-weight:700;">✅ Пропусков нет</span>`;
+            }
+
+            if (newFormat.length > 0) {
+                const totals = [...new Set(newFormat.map(f => f.total))];
+                if (totals.length > 1) {
+                    summaryHtml += ` <span style="color:#e03131; font-weight:700;">⚠️ Файлы от разных разделений!</span>`;
+                }
+            }
+
+            summaryText.innerHTML = summaryHtml;
+            summary.classList.add('visible');
+
+            let listHtml = '';
+            numbered.forEach(f => {
+                listHtml += `<div class="parts-check-row"><span class="part-ok">✔</span><span>${f.name}</span></div>`;
+            });
+            if (missing.length > 0) {
+                const missingLabels = missing.map(n => `#${String(n).padStart(3,'0')}`).join(', ');
+                listHtml += `<div class="parts-gap-warning">⚠️ Не хватает частей: ${missingLabels}<br>Файл будет собран некорректно!</div>`;
+            }
+            if (newFormat.length > 0) {
+                const totals = [...new Set(newFormat.map(f => f.total))];
+                if (totals.length > 1) {
+                    listHtml += `<div class="parts-gap-warning">⚠️ Файлы принадлежат разным разделениям (разное общее количество частей)! Проверьте выбор.</div>`;
+                }
+            }
+            fileList.innerHTML = listHtml;
+        }
+
+        function togglePartsList() {
+            const fileList = document.getElementById('partsFileList');
+            const toggleBtn = document.getElementById('partsToggleBtn');
+            const isOpen = fileList.classList.toggle('open');
+            toggleBtn.textContent = isOpen ? '📋 Скрыть список' : '📋 Показать список';
+        }
+
+        function declParts(n) {
+            const mod10 = n % 10, mod100 = n % 100;
+            if (mod10 === 1 && mod100 !== 11) return 'часть';
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'части';
+            return 'частей';
         }
 
         // ====================== DRAG & DROP ======================
@@ -446,6 +839,8 @@
                 input.files = dt.files;
                 const targetTextId = inputId === 'splitInput' ? 'splitInputText' : 'mergeInputText';
                 updateFileName(input, targetTextId);
+                if (inputId === 'splitInput') updatePreview();
+                if (inputId === 'mergeInput') checkPartsList();
             });
         }
         setupDragDrop('splitDropZone', 'splitInput', 'splitLabel');
@@ -466,10 +861,11 @@
         }
 
         async function triggerDownloads(linksArray) {
+            const delay = getDownloadDelay();
             for (let link of linksArray) {
                 if (!link.classList.contains('downloaded')) {
                     link.click();
-                    await new Promise(r => setTimeout(r, 400));
+                    await new Promise(r => setTimeout(r, delay));
                 }
             }
         }
@@ -490,119 +886,85 @@
             document.getElementById('settingsToggle').disabled = !enabled;
         }
 
-        // ====================== ZIP-УПАКОВЩИК ======================
-        function createZip(files) {
-            const encoder = new TextEncoder();
-            const centralDir = [];
-            const localHeaders = [];
-            let offset = 0;
+        // ====================== ДИНАМИЧЕСКАЯ ЗАГРУЗКА JSZip ======================
+        function loadJSZip() {
+            return new Promise((resolve, reject) => {
+                // 1. Проверяем кэш localStorage
+                const cached = localStorage.getItem('jszip_cache');
+                if (cached) {
+                    try {
+                        eval(cached);
+                        if (typeof JSZip !== 'undefined') {
+                            resolve();
+                            return;
+                        }
+                    } catch (e) {
+                        localStorage.removeItem('jszip_cache');
+                    }
+                }
 
-            for (const file of files) {
-                const nameBytes = encoder.encode(file.name);
-                const data = file.data;
-                const crc = 0;
-                const size = data.size;
-
-                const localHeader = new Uint8Array(30 + nameBytes.length);
-                const view = new DataView(localHeader.buffer);
-                view.setUint32(0, 0x04034b50, true);
-                view.setUint16(4, 20, true);
-                view.setUint16(6, 0x0800, true);
-                view.setUint16(8, 0, true);
-                view.setUint16(10, 0, true);
-                view.setUint16(12, 0, true);
-                view.setUint32(14, crc, true);
-                view.setUint32(18, size, true);
-                view.setUint32(22, size, true);
-                view.setUint16(26, nameBytes.length, true);
-                view.setUint16(28, 0, true);
-                localHeader.set(nameBytes, 30);
-
-                localHeaders.push({ header: localHeader, data: data });
-
-                const cdEntry = new Uint8Array(46 + nameBytes.length);
-                const cdView = new DataView(cdEntry.buffer);
-                cdView.setUint32(0, 0x02014b50, true);
-                cdView.setUint16(4, 20, true);
-                cdView.setUint16(6, 20, true);
-                cdView.setUint16(8, 0x0800, true);
-                cdView.setUint16(10, 0, true);
-                cdView.setUint16(12, 0, true);
-                cdView.setUint16(14, 0, true);
-                cdView.setUint32(16, crc, true);
-                cdView.setUint32(20, size, true);
-                cdView.setUint32(24, size, true);
-                cdView.setUint16(28, nameBytes.length, true);
-                cdView.setUint16(30, 0, true);
-                cdView.setUint16(32, 0, true);
-                cdView.setUint16(34, 0, true);
-                cdView.setUint16(36, 0, true);
-                cdView.setUint32(38, 0, true);
-                cdView.setUint32(42, offset, true);
-                cdEntry.set(nameBytes, 46);
-                centralDir.push(cdEntry);
-
-                offset += localHeader.byteLength + size;
-            }
-
-            const cdOffset = offset;
-            const cdSize = centralDir.reduce((sum, e) => sum + e.byteLength, 0);
-            const eocd = new Uint8Array(22);
-            const eocdView = new DataView(eocd.buffer);
-            eocdView.setUint32(0, 0x06054b50, true);
-            eocdView.setUint16(4, 0, true);
-            eocdView.setUint16(6, 0, true);
-            eocdView.setUint16(8, files.length, true);
-            eocdView.setUint16(10, files.length, true);
-            eocdView.setUint32(12, cdSize, true);
-            eocdView.setUint32(16, cdOffset, true);
-            eocdView.setUint16(20, 0, true);
-
-            const parts = [];
-            for (const lh of localHeaders) {
-                parts.push(lh.header);
-                parts.push(lh.data);
-            }
-            for (const cd of centralDir) {
-                parts.push(cd);
-            }
-            parts.push(eocd);
-
-            return new Blob(parts, { type: 'application/zip' });
+                // 2. Загружаем с CDN
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                script.onload = () => {
+                    // Сохраняем в кэш
+                    fetch(script.src)
+                        .then(res => res.text())
+                        .then(code => {
+                            try { localStorage.setItem('jszip_cache', code); } catch (e) {}
+                        })
+                        .catch(() => {});
+                    resolve();
+                };
+                script.onerror = () => {
+                    reject(new Error('Не удалось загрузить библиотеку JSZip. Проверьте подключение к интернету.'));
+                };
+                document.head.appendChild(script);
+            });
         }
 
+        // ====================== ZIP-АРХИВ (НАДЁЖНЫЙ) ======================
         async function downloadZip() {
             if (currentChunksData.length === 0) {
                 alert('Нет данных для архивации.');
                 return;
             }
 
-            const files = currentChunksData.map(part => ({
-                name: part.fileName,
-                data: part.blob
-            }));
+            try {
+                await loadJSZip();
 
-            const zipName = currentBaseName + (currentOriginalExt ? currentOriginalExt : '') + '_parts.zip';
-            const zipBlob = createZip(files);
-            const url = URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = zipName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 1000);
+                const zip = new JSZip();
+                for (const part of currentChunksData) {
+                    if (part.blob && part.blob instanceof Blob) {
+                        zip.file(part.fileName, part.blob);
+                    }
+                }
+
+                const zipName = currentBaseName + (currentOriginalExt ? currentOriginalExt : '') + '_parts.zip';
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = zipName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+            } catch (err) {
+                console.error('Ошибка создания ZIP:', err);
+                alert('Не удалось создать ZIP-архив: ' + (err.message || 'неизвестная ошибка'));
+            }
         }
 
-        // ====================== РАЗДЕЛЕНИЕ (ИСПРАВЛЕНО) ======================
+        // ====================== РАЗДЕЛЕНИЕ ======================
         async function splitFile() {
             const fileInput = document.getElementById('splitInput');
             const file = fileInput.files[0];
             if (!file) return alert('Пожалуйста, сначала выберите файл для разделения.');
 
-            if (/_part\d+\.part$/i.test(file.name)) {
+            if (/_part\d+(?:of\d+)?\.part$/i.test(file.name)) {
                 const progressDiv = document.getElementById('splitProgress');
                 progressDiv.style.display = 'block';
                 progressDiv.innerHTML = `<span class="inline-error">❌ ОШИБКА: Этот файл уже является частью (${file.name}). Повторное разделение запрещено!</span>`;
@@ -614,15 +976,18 @@
             const chunksListDiv = document.getElementById('chunksList');
             const splitBtn = document.getElementById('splitBtn');
             const cancelBtn = document.getElementById('cancelSplitBtn');
+            const statsCard = document.getElementById('splitStatsCard');
+            const preview = document.getElementById('splitPreview');
             
             revokeAllURLs();
             actionsDiv.innerHTML = '';
             chunksListDiv.innerHTML = '';
+            statsCard.classList.add('hidden');
+            statsCard.innerHTML = '';
             currentChunksData = [];
             currentBaseName = '';
             currentOriginalExt = '';
             
-            // ✅ ПРИМЕНЯЕМ ВИДИМОСТЬ СПИСКА ДО ДОБАВЛЕНИЯ ЭЛЕМЕНТОВ
             chunksListDiv.style.display = hideChunksListCheck.checked ? 'none' : 'block';
             
             let chunkMB = parseFloat(document.getElementById('chunkSize').value);
@@ -658,6 +1023,9 @@
             splitBtn.disabled = true;
             splitBtn.textContent = 'Разделение...';
             setSettingsEnabled(false);
+            preview.classList.add('hidden');
+
+            const splitStartTime = Date.now();
 
             const downloadLinks = [];
             const partFileNames = [];
@@ -682,7 +1050,8 @@
                     const encryptedBlob = new Blob([arrayBuf], { type: 'application/octet-stream' });
 
                     const partNum = String(i + 1).padStart(3, '0');
-                    const fileName = `${baseName}${originalExt}_part${partNum}${PART_EXT}`;
+                    const totalNum = String(chunksCount).padStart(3, '0');
+                    const fileName = `${baseName}${originalExt}_part${partNum}of${totalNum}${PART_EXT}`;
                     const url = URL.createObjectURL(encryptedBlob);
                     createdURLs.push(url);
                     partURLs.push(url);
@@ -721,15 +1090,17 @@
                     await new Promise(resolve => setTimeout(resolve, 20));
                 }
 
-                // Кнопки скачивания (если не автоскачивание и частей > 1)
-                if (!autoDownloadSplitCheck.checked && chunksCount > 1) {
+                if (!autoDownloadSplitCheck.checked) {
                     const mode = downloadButtonsModeSelect.value;
-                    const zipName = currentBaseName + (currentOriginalExt ? currentOriginalExt : '') + '_parts.zip';
 
                     if (mode === 'all' || mode === 'both') {
                         const downloadAllBtn = document.createElement('button');
                         downloadAllBtn.className = 'download-all-btn';
-                        downloadAllBtn.textContent = `⬇️ Скачать все части по отдельности (${chunksCount} шт.)`;
+                        if (chunksCount > 1) {
+                            downloadAllBtn.textContent = `⬇️ Скачать все части по отдельности (${chunksCount} шт.)`;
+                        } else {
+                            downloadAllBtn.textContent = `⬇️ Скачать часть`;
+                        }
                         downloadAllBtn.addEventListener('click', () => triggerDownloads(downloadLinks));
                         actionsDiv.appendChild(downloadAllBtn);
                     }
@@ -760,6 +1131,25 @@
                 progressDiv.innerHTML = `<span class="success">✅ Разделение завершено! Всего частей: ${chunksCount}</span><br>
                     <small>Все части с расширением .part. Для восстановления используйте сборку.</small>`;
 
+                const elapsed = ((Date.now() - splitStartTime) / 1000).toFixed(1);
+                const origSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                statsCard.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Исходный размер</span>
+                        <span class="stat-value">${origSizeMB} МБ</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Частей создано</span>
+                        <span class="stat-value">${chunksCount}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Время обработки</span>
+                        <span class="stat-value">${elapsed} с</span>
+                    </div>
+                `;
+                statsCard.classList.remove('hidden');
+                updatePreview();
+
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error(error);
@@ -771,6 +1161,7 @@
                 cancelBtn.style.display = 'none';
                 currentAbortController = null;
                 setSettingsEnabled(true);
+                updatePreview();
             }
         }
 
@@ -791,8 +1182,8 @@
             progressDiv.textContent = '🔍 Сортируем...';
 
             files.sort((a, b) => {
-                const numA = (a.name.match(/_part(\d+)/) || [])[1];
-                const numB = (b.name.match(/_part(\d+)/) || [])[1];
+                const numA = (a.name.match(/_part(\d+)(?:of\d+)?\.part$/i) || [])[1];
+                const numB = (b.name.match(/_part(\d+)(?:of\d+)?\.part$/i) || [])[1];
                 return (parseInt(numA) || 0) - (parseInt(numB) || 0);
             });
 
@@ -803,10 +1194,17 @@
             try {
                 const chunks = [];
                 for (let i = 0; i < files.length; i++) {
-                    const buffer = await files[i].arrayBuffer();
+                    progressDiv.textContent = `⏳ Чтение и расшифровка: ${i + 1} из ${files.length} (${files[i].name})`;
+                    
+                    const buffer = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(new Error(`Ошибка чтения файла "${files[i].name}".`));
+                        reader.readAsArrayBuffer(files[i]);
+                    });
+
                     xorBuffer(buffer);
                     chunks.push(buffer);
-                    progressDiv.textContent = `⏳ Чтение и расшифровка: ${i + 1} из ${files.length} (${files[i].name})`;
                 }
 
                 progressDiv.textContent = '🧩 Объединяем данные...';
@@ -815,7 +1213,7 @@
                 createdURLs.push(url);
 
                 const firstFileName = files[0].name;
-                const originalName = firstFileName.replace(/_part\d+\.part$/, '') || firstFileName;
+                const originalName = firstFileName.replace(/_part\d+(?:of\d+)?\.part$/i, '') || firstFileName;
                 const finalName = (originalName !== firstFileName) ? originalName : `восстановленный_${firstFileName}`;
 
                 const finalSizeMB = (finalBlob.size / 1024 / 1024).toFixed(2);
