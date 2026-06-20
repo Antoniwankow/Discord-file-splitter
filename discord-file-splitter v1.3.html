@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разбиватель + Сборщик для Discord</title>
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --text-color: #333;
+            --section-bg: white;
+            --border-color: #e0e0e0;
+            --input-bg: white;
+            --chunk-bg: #f8f9fa;
+            --progress-bg: #eef2ff;
+            --small-color: #666;
+            --warning-bg: #fff3cd;
+            --warning-border: #ff6b6b;
+            --warning-text: #b85c00;
+            --warning-example-bg: #ffe0e0;
+            --warning-correct-bg: #e0ffe0;
+            --btn-hover-bg: rgba(128, 128, 128, 0.1);
+            --file-input-bg: #f1f3f4;
+            --file-input-hover: #e8eaed;
+            --modal-overlay: rgba(0, 0, 0, 0.4);
+        }
+
+        body.dark-theme {
+            --bg-color: #1e1f22;
+            --text-color: #dbdee1;
+            --section-bg: #2b2d31;
+            --border-color: #1e1f22;
+            --input-bg: #383a40;
+            --chunk-bg: #383a40;
+            --progress-bg: #383a40;
+            --small-color: #949ba4;
+            --warning-bg: #4d3d19;
+            --warning-border: #ff6b6b;
+            --warning-text: #f2e3af;
+            --warning-example-bg: #5c2b2b;
+            --warning-correct-bg: #2d4d33;
+            --btn-hover-bg: rgba(255, 255, 255, 0.1);
+            --file-input-bg: #383a40;
+            --file-input-hover: #4e5058;
+            --modal-overlay: rgba(0, 0, 0, 0.6);
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            position: relative;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #settingsToggle {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: transform 0.2s, background-color 0.2s;
+            line-height: 1;
+        }
+        #settingsToggle:hover {
+            transform: scale(1.1) rotate(45deg);
+            background-color: var(--btn-hover-bg);
+        }
+
+        /* Модальное окно настроек */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-overlay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .modal-window {
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        .modal-close:hover { opacity: 1; }
+        .modal-title { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            gap: 15px;
+        }
+        .setting-item:last-child { margin-bottom: 0; }
+        .setting-label { font-weight: 500; font-size: 15px; cursor: pointer; user-select: none; flex-grow: 1; }
+        
+        .setting-checkbox { width: 18px; height: 18px; cursor: pointer; }
+        .theme-btn-inline {
+            background: var(--file-input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .theme-btn-inline:hover { background: var(--file-input-hover); }
+
+        h1 { text-align: center; color: #5865F2; }
+        .section { 
+            background: var(--section-bg);
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            padding: 25px; 
+            margin: 25px 0; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .warning-section {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning-border);
+            border-left: 6px solid var(--warning-border);
+            color: var(--warning-text);
+        }
+        .warning-section h2 {
+            color: #ff6b6b;
+            margin-top: 0;
+        }
+        .warning-section strong {
+            color: #ff6b6b;
+        }
+        .warning-example {
+            background: var(--warning-example-bg);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+        .warning-correct {
+            background: var(--warning-correct-bg);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+        h2 { margin-top: 0; font-weight: 500; }
+        label.input-title { font-weight: 600; display: block; margin-bottom: 5px; }
+        
+        input[type="number"] { 
+            width: 80px; 
+            padding: 8px; 
+            font-size: 16px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .file-upload-wrapper {
+            margin: 12px 0 6px 0;
+            width: 100%;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            background-color: var(--file-input-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-color);
+            width: 100%;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .file-upload-label:hover {
+            background-color: var(--file-input-hover);
+            border-color: #5865F2;
+        }
+
+        .file-upload-label.drag-over {
+            background-color: var(--file-input-hover);
+            border-color: #5865F2;
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
+        }
+
+        .file-upload-icon {
+            font-size: 20px;
+        }
+
+        .file-name-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .file-upload-input {
+            position: absolute;
+            width: 0;
+            height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .file-upload-input:focus + .file-upload-label {
+            border-color: #5865F2;
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
+        }
+
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline) { 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            margin: 15px 5px 10px 0; 
+            cursor: pointer; 
+            background-color: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):hover { background-color: #4752c4; }
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):active { background-color: #3c45a5; }
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):disabled { background-color: #8c94e8; cursor: not-allowed; }
+        
+        .chunk { 
+            background: var(--chunk-bg); 
+            padding: 12px 15px; 
+            margin: 10px 0; 
+            border-radius: 8px;
+            border-left: 4px solid #5865F2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            transition: background-color 0.3s;
+        }
+        .chunk-info { flex-grow: 1; min-width: 200px; }
+        .success { color: #2d7d46; font-weight: bold; }
+        .warning { color: #b85c00; font-weight: bold; }
+        body.dark-theme .warning { color: #ff9838; }
+        body.dark-theme .success { color: #43b566; }
+        
+        .download-link { 
+            font-size: 14px; 
+            text-decoration: none; 
+            font-weight: 600; 
+            padding: 6px 12px;
+            background: #5865F2;
+            color: white;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .download-link.downloaded { 
+            background: #2d7d46; 
+            pointer-events: none; 
+        }
+        .chunk-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .progress-info {
+            margin: 15px 0;
+            padding: 10px;
+            background: var(--progress-bg);
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        small { color: var(--small-color); display: block; margin-top: 4px; }
+        .encrypted-note {
+            font-size: 0.8em;
+            color: var(--warning-text);
+            margin-top: 4px;
+        }
+        .warning-top-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px 18px;
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            border-radius: 8px;
+            color: var(--warning-text);
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .warning-top-link:hover {
+            filter: brightness(0.95);
+        }
+        .download-all-btn {
+            background: #28a745 !important;
+            margin: 5px 0 15px 0 !important;
+            width: 100%;
+        }
+        .download-all-btn:hover {
+            background: #218838 !important;
+        }
+        #chunksList {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button id="settingsToggle" onclick="openModal()" title="Настройки">⚙️</button>
+
+    <div id="settingsModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-window" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal(null)">✕</button>
+            <h3 class="modal-title">⚙️ Настройки</h3>
+            
+            <div class="setting-item">
+                <span class="setting-label" onclick="toggleTheme()">Тема интерфейса:</span>
+                <button id="themeBtnText" class="theme-btn-inline" onclick="toggleTheme()">Светлая 🌙</button>
+            </div>
+            
+            <div class="setting-item">
+                <label for="autoDownloadSplit" class="setting-label">Авто-скачивание всех частей после разбивки</label>
+                <input type="checkbox" id="autoDownloadSplit" class="setting-checkbox" onchange="saveSettings()">
+            </div>
+            
+            <div class="setting-item">
+                <label for="autoDownloadMerge" class="setting-label">Авто-скачивание готового файла после сборки</label>
+                <input type="checkbox" id="autoDownloadMerge" class="setting-checkbox" onchange="saveSettings()">
+            </div>
+        </div>
+    </div>
+
+    <h1>🔧 Разбиватель + Сборщик для Discord</h1>
+
+    <a href="#important-warning" class="warning-top-link">⚠️ Перед использованием обязательно прочитайте важное предупреждение внизу страницы</a>
+
+    <!-- Разбивка -->
+    <div class="section" id="splitSection">
+        <h2>1. Разбить большой файл</h2>
+        
+        <label for="chunkSize" class="input-title">Размер одного кусочка (МБ):</label>
+        <input type="number" id="chunkSize" value="9" min="0.1" max="50" step="0.5">
+        <small>Рекомендуется 8–9 МБ для Discord (макс. 10 МБ для обычных пользователей)</small>
+        
+        <label style="margin-top: 15px;" class="input-title">Выберите файл:</label>
+        <div class="file-upload-wrapper" id="splitDropZone">
+            <input type="file" id="splitInput" class="file-upload-input" onchange="updateFileName(this, 'splitInputText')" />
+            <label for="splitInput" class="file-upload-label" id="splitLabel">
+                <span class="file-upload-icon">📁</span>
+                <span id="splitInputText" class="file-name-text">Перетащите файл или кликните для выбора</span>
+            </label>
+        </div>
+        <small style="color:var(--warning-text);">🔸 Все части получат расширение <strong>.part</strong> (не исходное)</small>
+        
+        <button id="splitBtn" onclick="splitFile()">✂️ Разбить файл на части</button>
+        <div id="splitProgress" class="progress-info" style="display: none;"></div>
+        
+        <div id="splitActionsContainer"></div>
+        <div id="chunksList"></div>
+    </div>
+
+    <!-- Сборка -->
+    <div class="section" id="mergeSection">
+        <h2>2. Собрать файл из частей</h2>
+        <label class="input-title">Выберите все части файла (расширение .part):</label>
+        <div class="file-upload-wrapper" id="mergeDropZone">
+            <input type="file" id="mergeInput" class="file-upload-input" multiple onchange="updateFileName(this, 'mergeInputText')" />
+            <label for="mergeInput" class="file-upload-label" id="mergeLabel">
+                <span class="file-upload-icon">🧩</span>
+                <span id="mergeInputText" class="file-name-text">Выберите одну или несколько частей .part</span>
+            </label>
+        </div>
+        <small>⚠️ Работает даже с одним файлом — это позволяет обойти сжатие Discord для небольших файлов.</small>
+        
+        <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать / расшифровать</button>
+        <div id="mergeProgress" class="progress-info" style="display: none;"></div>
+        <div id="mergeResult"></div>
+    </div>
+
+    <!-- Предупреждение -->
+    <div class="section warning-section" id="important-warning">
+        <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h2>
+        <p><strong>Не разделяйте разделённые файлы повторно!</strong></p>
+        <p>Части имеют расширение <strong>.part</strong> и зашифрованы. Их <strong>нельзя разбивать заново</strong> этим же инструментом.</p>
+        
+        <div class="warning-example">
+            <strong>❌ Неправильно:</strong>
+            <ul>
+                <li>Получатель скачивает одну часть (<code>video.mp4_part001.part</code>)</li>
+                <li>Разбивает её повторно</li>
+                <li>Итоговый файл после сборки будет испорчен</li>
+            </ul>
+        </div>
+        
+        <div class="warning-correct">
+            <strong>✅ Правильно:</strong>
+            <ul>
+                <li>Разбейте исходный файл (или зашифруйте один файл для обхода сжатия)</li>
+                <li>Отправьте <strong>ВСЕ</strong> части получателю</li>
+                <li>Получатель собирает их → получает исходный файл</li>
+            </ul>
+        </div>
+        
+        <p><strong style="color: #ff6b6b;">⚠️ Причина:</strong> части зашифрованы. Двойное шифрование = потеря данных.</p>
+    </div>
+
+    <script>
+        // ====================== НАСТРОЙКИ И МОДАЛЬНОЕ ОКНО ======================
+        const modal = document.getElementById('settingsModal');
+        const themeBtnText = document.getElementById('themeBtnText');
+        const autoDownloadSplitCheck = document.getElementById('autoDownloadSplit');
+        const autoDownloadMergeCheck = document.getElementById('autoDownloadMerge');
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedTheme = localStorage.getItem('app-theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeBtnText.innerHTML = 'Темная ☀️';
+            } else {
+                themeBtnText.innerHTML = 'Светлая 🌙';
+            }
+
+            autoDownloadSplitCheck.checked = localStorage.getItem('auto-download-split') === 'true';
+            autoDownloadMergeCheck.checked = localStorage.getItem('auto-download-merge') === 'true';
+        });
+
+        function openModal() { modal.classList.add('active'); }
+        function closeModal(e) { if (!e || e.target === modal) modal.classList.remove('active'); }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-theme');
+            if (isDark) {
+                localStorage.setItem('app-theme', 'dark');
+                themeBtnText.innerHTML = 'Темная ☀️';
+            } else {
+                localStorage.setItem('app-theme', 'light');
+                themeBtnText.innerHTML = 'Светлая 🌙';
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('auto-download-split', autoDownloadSplitCheck.checked);
+            localStorage.setItem('auto-download-merge', autoDownloadMergeCheck.checked);
+        }
+
+        function updateFileName(input, targetId) {
+            const labelSpan = document.getElementById(targetId);
+            if (input.files && input.files.length > 0) {
+                if (input.files.length === 1) {
+                    labelSpan.textContent = input.files[0].name;
+                } else {
+                    labelSpan.textContent = `Выбрано файлов: ${input.files.length}`;
+                }
+            } else {
+                if (targetId === 'splitInputText') {
+                    labelSpan.textContent = 'Перетащите файл или кликните для выбора';
+                } else {
+                    labelSpan.textContent = 'Выберите одну или несколько частей .part';
+                }
+            }
+        }
+
+        // ====================== DRAG & DROP ======================
+        function setupDragDrop(dropZoneId, inputId, labelId) {
+            const dropZone = document.getElementById(dropZoneId);
+            const input = document.getElementById(inputId);
+            const label = document.getElementById(labelId);
+
+            if (!dropZone || !input || !label) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    label.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    label.classList.remove('drag-over');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length === 0) return;
+
+                // Создаём DataTransfer для программного назначения файлов
+                const dt = new DataTransfer();
+                if (input.multiple) {
+                    for (let file of files) {
+                        dt.items.add(file);
+                    }
+                } else {
+                    // Для одиночного выбора берём только первый файл
+                    dt.items.add(files[0]);
+                }
+                input.files = dt.files;
+
+                // Обновляем текст в label
+                const targetTextId = inputId === 'splitInput' ? 'splitInputText' : 'mergeInputText';
+                updateFileName(input, targetTextId);
+            });
+        }
+
+        // Инициализация drag & drop для обеих секций
+        setupDragDrop('splitDropZone', 'splitInput', 'splitLabel');
+        setupDragDrop('mergeDropZone', 'mergeInput', 'mergeLabel');
+
+        // ====================== ЛОГИКА ОБРАБОТКИ ФАЙЛОВ ======================
+        const createdURLs = [];
+        function revokeAllURLs() {
+            createdURLs.forEach(url => URL.revokeObjectURL(url));
+            createdURLs.length = 0;
+        }
+
+        const XOR_KEY = 0x5A;
+        function xorBuffer(buffer) {
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.length; i++) {
+                bytes[i] ^= XOR_KEY;
+            }
+            return buffer;
+        }
+
+        async function triggerDownloads(linksArray) {
+            for (let link of linksArray) {
+                if (!link.classList.contains('downloaded')) {
+                    link.click();
+                    await new Promise(r => setTimeout(r, 400));
+                }
+            }
+        }
+
+        // ====================== РАЗБИВКА ======================
+        async function splitFile() {
+            const fileInput = document.getElementById('splitInput');
+            const file = fileInput.files[0];
+            if (!file) return alert('Пожалуйста, сначала выберите файл для разбивки.');
+
+            const progressDiv = document.getElementById('splitProgress');
+            const actionsDiv = document.getElementById('splitActionsContainer');
+            const chunksListDiv = document.getElementById('chunksList');
+            const splitBtn = document.getElementById('splitBtn');
+            
+            revokeAllURLs();
+            actionsDiv.innerHTML = '';
+            chunksListDiv.innerHTML = '';
+            
+            let chunkMB = parseFloat(document.getElementById('chunkSize').value);
+            if (isNaN(chunkMB) || chunkMB < 0.1) {
+                alert('Размер части должен быть не менее 0.1 МБ. Установлено значение 9 МБ.');
+                chunkMB = 9;
+                document.getElementById('chunkSize').value = 9;
+            }
+            
+            const chunkSize = chunkMB * 1024 * 1024;
+            const chunksCount = Math.ceil(file.size / chunkSize);
+            
+            const lastDot = file.name.lastIndexOf('.');
+            const baseName = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
+            const originalExt = lastDot !== -1 ? file.name.substring(lastDot) : '';
+            const PART_EXT = '.part';
+
+            progressDiv.style.display = 'block';
+            progressDiv.innerHTML = `⏳ Разбиваем на ${chunksCount} частей по ${chunkMB} МБ...<br>
+                <span class="warning">🔒 Части будут зашифрованы и получат расширение ${PART_EXT}.</span>`;
+            
+            splitBtn.disabled = true;
+            splitBtn.textContent = 'Разбивка...';
+
+            const downloadLinks = [];
+
+            try {
+                for (let i = 0; i < chunksCount; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    const arrayBuf = await chunk.arrayBuffer();
+                    xorBuffer(arrayBuf);
+                    const encryptedBlob = new Blob([arrayBuf], { type: 'application/octet-stream' });
+
+                    const partNum = String(i + 1).padStart(3, '0');
+                    const fileName = `${baseName}${originalExt}_part${partNum}${PART_EXT}`;
+
+                    const url = URL.createObjectURL(encryptedBlob);
+                    createdURLs.push(url);
+
+                    const chunkSizeMB = (chunk.size / 1024 / 1024).toFixed(2);
+                    
+                    const div = document.createElement('div');
+                    div.className = 'chunk';
+                    div.innerHTML = `
+                        <div class="chunk-info">
+                            <strong>📄 Часть ${i + 1}/${chunksCount}</strong> — ${chunkSizeMB} МБ (зашифрована)<br>
+                            <span style="font-size: 0.9em; opacity: 0.8;">${fileName}</span>
+                            <div class="encrypted-note">🔒 Не пытайтесь открыть. Расширение .part. НЕ РАЗБИВАЙТЕ ПОВТОРНО!</div>
+                        </div>
+                        <div class="chunk-actions">
+                            <a href="${url}" download="${fileName}" class="download-link">⬇️ Скачать</a>
+                        </div>
+                    `;
+
+                    const downloadLink = div.querySelector('.download-link');
+                    downloadLink.addEventListener('click', function() {
+                        setTimeout(() => {
+                            downloadLink.textContent = '✅ Скачано';
+                            downloadLink.classList.add('downloaded');
+                        }, 300);
+                    });
+
+                    chunksListDiv.appendChild(div);
+                    downloadLinks.push(downloadLink);
+
+                    progressDiv.innerHTML = `⏳ Обработано ${i + 1} из ${chunksCount} частей...<br>
+                        <span class="warning">🔒 Части зашифрованы (${PART_EXT}).</span>`;
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+
+                if (chunksCount > 1) {
+                    const downloadAllBtn = document.createElement('button');
+                    downloadAllBtn.className = 'download-all-btn';
+                    downloadAllBtn.textContent = `⬇️ Скачать все части сразу (${chunksCount} шт.)`;
+                    downloadAllBtn.addEventListener('click', () => triggerDownloads(downloadLinks));
+                    actionsDiv.appendChild(downloadAllBtn);
+                }
+
+                progressDiv.innerHTML = `<span class="success">✅ Разбиение завершено! Всего частей: ${chunksCount}</span><br>
+                    <small>Все части с расширением .part. Для восстановления используйте сборку. <a href="#important-warning">НЕ РАЗБИВАЙТЕ ИХ ПОВТОРНО!</a></small>`;
+
+                if (autoDownloadSplitCheck.checked) {
+                    setTimeout(() => triggerDownloads(downloadLinks), 300);
+                }
+
+            } catch (error) {
+                console.error(error);
+                progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка: ${error.message}</span>`;
+            } finally {
+                splitBtn.disabled = false;
+                splitBtn.textContent = '✂️ Разбить файл на части';
+            }
+        }
+
+        // ====================== СБОРКА ======================
+        async function mergeFiles() {
+            const input = document.getElementById('mergeInput');
+            const files = Array.from(input.files);
+            if (files.length === 0) return alert('Выберите хотя бы один файл .part.');
+
+            const progressDiv = document.getElementById('mergeProgress');
+            const resultDiv = document.getElementById('mergeResult');
+            const mergeBtn = document.getElementById('mergeBtn');
+            
+            revokeAllURLs();
+            resultDiv.innerHTML = '';
+            
+            progressDiv.style.display = 'block';
+            progressDiv.textContent = '🔍 Сортируем...';
+
+            files.sort((a, b) => {
+                const numA = (a.name.match(/_part(\d+)/) || [])[1];
+                const numB = (b.name.match(/_part(\d+)/) || [])[1];
+                return (parseInt(numA) || 0) - (parseInt(numB) || 0);
+            });
+
+            mergeBtn.disabled = true;
+            mergeBtn.textContent = 'Сборка...';
+
+            try {
+                const chunks = [];
+                for (let i = 0; i < files.length; i++) {
+                    const buffer = await files[i].arrayBuffer();
+                    xorBuffer(buffer);
+                    chunks.push(buffer);
+                    progressDiv.textContent = `⏳ Чтение и расшифровка: ${i + 1} из ${files.length} (${files[i].name})`;
+                }
+
+                progressDiv.textContent = '🧩 Объединяем данные...';
+                const finalBlob = new Blob(chunks);
+                const url = URL.createObjectURL(finalBlob);
+                createdURLs.push(url);
+
+                const firstFileName = files[0].name;
+                const originalName = firstFileName.replace(/_part\d+\.part$/, '') || firstFileName;
+                const finalName = (originalName !== firstFileName) ? originalName : `восстановленный_${firstFileName}`;
+
+                const finalSizeMB = (finalBlob.size / 1024 / 1024).toFixed(2);
+                const partsWord = files.length === 1 ? 'одной части' : `${files.length} частей`;
+
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'chunk';
+                wrapperDiv.style.borderLeftColor = '#2d7d46';
+                wrapperDiv.innerHTML = `
+                    <div class="chunk-info">
+                        <span class="success">✅ Файл успешно собран и расшифрован!</span><br>
+                        <strong>📦 ${finalName}</strong><br>
+                        <small>Размер: ${finalSizeMB} МБ (из ${partsWord})</small>
+                    </div>
+                `;
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = finalName;
+                link.className = 'download-link';
+                link.textContent = `⬇️ Скачать (${finalSizeMB} МБ)`;
+                link.addEventListener('click', function() {
+                    setTimeout(() => {
+                        link.textContent = '✅ Скачано';
+                        link.classList.add('downloaded');
+                    }, 300);
+                });
+
+                wrapperDiv.appendChild(link);
+                resultDiv.appendChild(wrapperDiv);
+                
+                progressDiv.innerHTML = `<span class="success">✅ Готово! Файл восстановлен как ${finalName}.</span>`;
+
+                if (autoDownloadMergeCheck.checked) {
+                    setTimeout(() => link.click(), 300);
+                }
+
+            } catch (error) {
+                console.error(error);
+                progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка сборки: ${error.message}</span>`;
+            } finally {
+                mergeBtn.disabled = false;
+                mergeBtn.textContent = '🧩 Собрать / расшифровать';
+            }
+        }
+
+        window.addEventListener('beforeunload', () => revokeAllURLs());
+    </script>
+</body>
+</html>
