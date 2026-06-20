@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разделитель + Сборщик для Discord</title>
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --text-color: #333;
+            --section-bg: white;
+            --border-color: #e0e0e0;
+            --input-bg: white;
+            --chunk-bg: #f8f9fa;
+            --progress-bg: #eef2ff;
+            --small-color: #666;
+            --btn-hover-bg: rgba(128, 128, 128, 0.1);
+            --file-input-bg: #f1f3f4;
+            --file-input-hover: #e8eaed;
+            --modal-overlay: rgba(0, 0, 0, 0.4);
+        }
+
+        body.dark-theme {
+            --bg-color: #1e1f22;
+            --text-color: #dbdee1;
+            --section-bg: #2b2d31;
+            --border-color: #1e1f22;
+            --input-bg: #383a40;
+            --chunk-bg: #383a40;
+            --progress-bg: #383a40;
+            --small-color: #949ba4;
+            --btn-hover-bg: rgba(255, 255, 255, 0.1);
+            --file-input-bg: #383a40;
+            --file-input-hover: #4e5058;
+            --modal-overlay: rgba(0, 0, 0, 0.6);
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            position: relative;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #settingsToggle {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: transform 0.2s, background-color 0.2s;
+            line-height: 1;
+        }
+        #settingsToggle:hover {
+            transform: scale(1.1) rotate(45deg);
+            background-color: var(--btn-hover-bg);
+        }
+        #settingsToggle:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-overlay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .modal-window {
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        .modal-close:hover { opacity: 1; }
+        .modal-title { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            gap: 15px;
+        }
+        .setting-item:last-child { margin-bottom: 0; }
+        .setting-label { font-weight: 500; font-size: 15px; cursor: pointer; user-select: none; flex-grow: 1; }
+        
+        .setting-checkbox { width: 18px; height: 18px; cursor: pointer; }
+        .theme-btn-inline {
+            background: var(--file-input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .theme-btn-inline:hover { background: var(--file-input-hover); }
+
+        .setting-select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .preset-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0 4px 0;
+        }
+        .preset-btn {
+            padding: 5px 11px !important;
+            font-size: 13px !important;
+            margin: 0 !important;
+            background-color: var(--file-input-bg) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 6px !important;
+            font-weight: 500 !important;
+            cursor: pointer;
+            transition: background-color 0.15s, border-color 0.15s !important;
+        }
+        .preset-btn:hover {
+            background-color: var(--file-input-hover) !important;
+            border-color: #5865F2 !important;
+        }
+        .preset-btn.active {
+            background-color: #5865F2 !important;
+            color: white !important;
+            border-color: #5865F2 !important;
+        }
+
+        .split-preview {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 5px 12px;
+            background: var(--progress-bg);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+            transition: background-color 0.3s;
+            min-height: 28px;
+        }
+        .split-preview.hidden { display: none; }
+
+        .split-stats-card {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 12px 0 4px 0;
+            padding: 12px 14px;
+            background: var(--chunk-bg);
+            border-radius: 8px;
+            border-left: 4px solid #5865F2;
+            font-size: 14px;
+        }
+        .split-stats-card.hidden { display: none; }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 100px;
+        }
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #5865F2;
+        }
+        body.dark-theme .stat-value { color: #7b8cf5; }
+
+        .parts-check-list {
+            margin: 8px 0;
+            padding: 10px 14px;
+            background: var(--chunk-bg);
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+        .parts-check-list.visible { display: block; }
+
+        .parts-summary {
+            display: none;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 0 0 0;
+            padding: 9px 13px;
+            background: var(--chunk-bg);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .parts-summary.visible { display: flex; }
+        .parts-summary-text { flex: 1; min-width: 0; }
+        .parts-toggle-btn {
+            padding: 4px 10px !important;
+            font-size: 12px !important;
+            margin: 0 !important;
+            background-color: var(--file-input-bg) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 5px !important;
+            font-weight: 500 !important;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background-color 0.15s !important;
+        }
+        .parts-toggle-btn:hover {
+            background-color: var(--file-input-hover) !important;
+        }
+
+        .parts-file-list {
+            margin: 0 0 4px 0;
+            padding: 8px 13px 10px;
+            background: var(--chunk-bg);
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid var(--border-color);
+            font-size: 13px;
+            display: none;
+        }
+        .parts-file-list.open { display: block; }
+
+        .parts-check-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+        }
+        .part-ok { color: #2d7d46; font-weight: 600; }
+        .part-missing { color: #e03131; font-weight: 600; }
+        body.dark-theme .part-ok { color: #43b566; }
+        body.dark-theme .part-missing { color: #ff6b6b; }
+        .parts-gap-warning {
+            margin-top: 8px;
+            padding: 7px 10px;
+            background: #fff3cd;
+            border-radius: 6px;
+            color: #7a5200;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        body.dark-theme .parts-gap-warning {
+            background: #3d2e00;
+            color: #ffbe00;
+        }
+
+        .delay-slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .delay-slider {
+            flex: 1;
+            min-width: 120px;
+            accent-color: #5865F2;
+            cursor: pointer;
+        }
+        .delay-number-input {
+            width: 68px !important;
+            padding: 5px 7px !important;
+            font-size: 14px !important;
+        }
+        .delay-unit {
+            font-size: 13px;
+            opacity: 0.7;
+            white-space: nowrap;
+        }
+
+        h1 { text-align: center; color: #5865F2; }
+        .section { 
+            background: var(--section-bg);
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            padding: 25px; 
+            margin: 25px 0; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        h2 { margin-top: 0; font-weight: 500; }
+        label.input-title { font-weight: 600; display: block; margin-bottom: 5px; }
+        
+        input[type="number"] { 
+            width: 80px; 
+            padding: 8px; 
+            font-size: 16px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .file-upload-wrapper { margin: 12px 0 6px 0; width: 100%; }
+
+        .file-upload-label {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 18px;
+            background-color: var(--file-input-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-color);
+            width: 100%;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .file-upload-label:hover { background-color: var(--file-input-hover); border-color: #5865F2; }
+        .file-upload-label.drag-over {
+            background-color: var(--file-input-hover);
+            border-color: #5865F2;
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
+        }
+
+        .file-upload-icon { font-size: 20px; }
+
+        .file-name-text {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-size: 14px; opacity: 0.9;
+        }
+
+        .file-upload-input { position: absolute; width: 0; height: 0; opacity: 0; overflow: hidden; }
+        .file-upload-input:focus + .file-upload-label {
+            border-color: #5865F2;
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
+        }
+
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline) { 
+            padding: 12px 24px; font-size: 16px; margin: 15px 5px 10px 0; 
+            cursor: pointer; background-color: #5865F2; color: white;
+            border: none; border-radius: 8px; font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):hover { background-color: #4752c4; }
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):active { background-color: #3c45a5; }
+        button:not(#settingsToggle):not(.modal-close):not(.theme-btn-inline):disabled { background-color: #8c94e8; cursor: not-allowed; }
+
+        .chunk { 
+            background: var(--chunk-bg); padding: 12px 15px; margin: 10px 0; 
+            border-radius: 8px; border-left: 4px solid #5865F2;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+            transition: background-color 0.3s;
+        }
+        .chunk-info { flex-grow: 1; min-width: 200px; }
+        .success { color: #2d7d46; font-weight: bold; }
+        .warning { color: #b85c00; font-weight: bold; }
+        body.dark-theme .warning { color: #ff9838; }
+        body.dark-theme .success { color: #43b566; }
+
+        .download-link { 
+            font-size: 14px; text-decoration: none; font-weight: 600; 
+            padding: 6px 12px; background: #5865F2; color: white; border-radius: 6px; white-space: nowrap;
+        }
+        .download-link.downloaded { background: #2d7d46; pointer-events: none; }
+        .chunk-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .progress-info {
+            margin: 15px 0; padding: 10px; background: var(--progress-bg);
+            border-radius: 6px; font-weight: 500; transition: background-color 0.3s;
+        }
+        small { color: var(--small-color); display: block; margin-top: 4px; }
+        .encrypted-note { font-size: 0.8em; color: var(--warning-text); margin-top: 4px; }
+        .download-all-btn { background: #28a745 !important; margin: 5px 0 10px 0 !important; width: 100%; }
+        .download-all-btn:hover { background: #218838 !important; }
+        .zip-btn { background: #9b59b6 !important; margin: 5px 0 15px 0 !important; width: 100%; }
+        .zip-btn:hover { background: #8e44ad !important; }
+        #chunksList { margin-top: 10px; }
+        .inline-error {
+            color: #ff4444; font-weight: bold; background: #ffeeee;
+            padding: 8px 12px; border-radius: 6px; margin-top: 10px; display: inline-block;
+        }
+        .auto-indicator {
+            color: #2d7d46; font-weight: 600; background: #e0ffe0;
+            padding: 6px 12px; border-radius: 6px; margin: 10px 0; display: inline-block; font-size: 0.9em;
+        }
+        body.dark-theme .auto-indicator { background: #2d4d33; color: #43b566; }
+
+        .progress-bar-container {
+            width: 100%; height: 20px; background: #e0e0e0;
+            border-radius: 10px; margin: 15px 0 5px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; width: 0%; background: #5865F2;
+            border-radius: 10px; transition: width 0.2s ease;
+        }
+        .cancel-btn {
+            background: #ff4444 !important;
+            margin-left: 10px;
+        }
+        .cancel-btn:hover { background: #cc0000 !important; }
+        .split-actions-row {
+            display: flex; align-items: center; flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <button id="settingsToggle" onclick="openModal()" title="Настройки">⚙️</button>
+
+    <div id="settingsModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-window" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal(null)">✕</button>
+            <h3 class="modal-title">⚙️ Настройки</h3>
+            <div class="setting-item">
+                <span class="setting-label" onclick="toggleTheme()">Тема интерфейса:</span>
+                <button id="themeBtnText" class="theme-btn-inline" onclick="toggleTheme()">Светлая 🌙</button>
+            </div>
+            <div class="setting-item">
+                <label for="autoDownloadSplit" class="setting-label">Авто-скачивание всех частей после разделения</label>
+                <input type="checkbox" id="autoDownloadSplit" class="setting-checkbox" onchange="saveSettings(); updateAutoIndicators();">
+            </div>
+            <div class="setting-item">
+                <label for="autoDownloadMerge" class="setting-label">Авто-скачивание готового файла после сборки</label>
+                <input type="checkbox" id="autoDownloadMerge" class="setting-checkbox" onchange="saveSettings(); updateAutoIndicators();">
+            </div>
+            <div class="setting-item">
+                <label for="hideChunksList" class="setting-label">Скрыть список разделённых частей</label>
+                <input type="checkbox" id="hideChunksList" class="setting-checkbox" onchange="saveSettings()">
+            </div>
+            <div class="setting-item">
+                <label for="downloadButtonsMode" class="setting-label">Отображение кнопок скачивания</label>
+                <select id="downloadButtonsMode" class="setting-select" onchange="saveSettings()">
+                    <option value="both">Скачать все части / скачать ZIP-архив</option>
+                    <option value="all">Скачать все части</option>
+                    <option value="zip">Скачать ZIP-архив</option>
+                </select>
+            </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <span class="setting-label" style="cursor:default;">Задержка между скачиванием частей</span>
+                <div class="delay-slider-row" style="width:100%;">
+                    <input type="range" id="downloadDelaySlider" class="delay-slider"
+                        min="100" max="2000" step="10" value="400"
+                        oninput="syncDelayFromSlider(this.value)">
+                    <input type="number" id="downloadDelayInput" class="delay-number-input"
+                        min="100" max="2000" step="10" value="400"
+                        oninput="syncDelayFromInput(this.value)">
+                    <span class="delay-unit">мс</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h1>🔧 Разделитель + Сборщик для Discord</h1>
+
+    <div id="splitAutoIndicator" class="auto-indicator" style="display: none;">⚡ Автоскачивание включено — части загрузятся автоматически</div>
+
+    <div class="section" id="splitSection">
+        <h2>1. Разделить большой файл</h2>
+        <label for="chunkSize" class="input-title">Размер одной части (МБ):</label>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+            <input type="number" id="chunkSize" value="9" min="0.1" max="500" step="0.5" oninput="updatePreview()">
+            <div class="preset-btns">
+                <button class="preset-btn" onclick="setPreset(9)" title="Обычные пользователи Discord">Обычный · 9 МБ</button>
+                <button class="preset-btn" onclick="setPreset(50)" title="Nitro Basic">Nitro Basic · 50 МБ</button>
+                <button class="preset-btn" onclick="setPreset(500)" title="Nitro">Nitro · 500 МБ</button>
+            </div>
+        </div>
+        <small>Рекомендуется 8–9 МБ для Discord (макс. 10 МБ для обычных пользователей)</small>
+        
+        <label style="margin-top: 15px;" class="input-title">Выберите файл:</label>
+        <div class="file-upload-wrapper" id="splitDropZone">
+            <input type="file" id="splitInput" class="file-upload-input" onchange="updateFileName(this, 'splitInputText'); updatePreview();" />
+            <label for="splitInput" class="file-upload-label" id="splitLabel">
+                <span class="file-upload-icon">📁</span>
+                <span id="splitInputText" class="file-name-text">Перетащите файл или кликните для выбора</span>
+            </label>
+        </div>
+        <small style="color:var(--warning-text);">🔸 Все части получат расширение <strong>.part</strong> (не исходное)</small>
+
+        <div id="splitPreview" class="split-preview hidden"></div>
+        
+        <div class="split-actions-row">
+            <button id="splitBtn" onclick="splitFile()">✂️ Разделить файл на части</button>
+            <button id="cancelSplitBtn" class="cancel-btn" style="display: none;" onclick="cancelSplit()">❌ Отмена</button>
+        </div>
+
+        <div id="splitStatsCard" class="split-stats-card hidden"></div>
+        
+        <div id="splitProgress" class="progress-info" style="display: none;"></div>
+        <div id="splitActionsContainer"></div>
+        <div id="chunksList"></div>
+    </div>
+
+    <div id="mergeAutoIndicator" class="auto-indicator" style="display: none;">⚡ Автоскачивание включено — готовый файл загрузится автоматически</div>
+
+    <div class="section" id="mergeSection">
+        <h2>2. Собрать файл из частей</h2>
+        <label class="input-title">Выберите все части файла (расширение .part):</label>
+        <div class="file-upload-wrapper" id="mergeDropZone">
+            <input type="file" id="mergeInput" class="file-upload-input" multiple onchange="updateFileName(this, 'mergeInputText'); checkPartsList();" />
+            <label for="mergeInput" class="file-upload-label" id="mergeLabel">
+                <span class="file-upload-icon">🧩</span>
+                <span id="mergeInputText" class="file-name-text">Выберите одну или несколько частей .part</span>
+            </label>
+        </div>
+        <small>⚠️ Работает даже с одним файлом — это позволяет обойти сжатие Discord для небольших файлов.</small>
+
+        <div id="partsSummary" class="parts-summary">
+            <span id="partsSummaryText" class="parts-summary-text"></span>
+            <button class="parts-toggle-btn" id="partsToggleBtn" onclick="togglePartsList()">📋 Показать список</button>
+        </div>
+        <div id="partsFileList" class="parts-file-list"></div>
+
+        <button id="mergeBtn" onclick="mergeFiles()">🧩 Собрать / расшифровать</button>
+        <div id="mergeProgress" class="progress-info" style="display: none;"></div>
+        <div id="mergeResult"></div>
+    </div>
+
+    <script>
+        // ====================== НАСТРОЙКИ ======================
+        const modal = document.getElementById('settingsModal');
+        const themeBtnText = document.getElementById('themeBtnText');
+        const autoDownloadSplitCheck = document.getElementById('autoDownloadSplit');
+        const autoDownloadMergeCheck = document.getElementById('autoDownloadMerge');
+        const splitAutoIndicator = document.getElementById('splitAutoIndicator');
+        const mergeAutoIndicator = document.getElementById('mergeAutoIndicator');
+        const hideChunksListCheck = document.getElementById('hideChunksList');
+        const downloadButtonsModeSelect = document.getElementById('downloadButtonsMode');
+        const downloadDelaySlider = document.getElementById('downloadDelaySlider');
+        const downloadDelayInput = document.getElementById('downloadDelayInput');
+
+        function getDownloadDelay() {
+            return parseInt(downloadDelaySlider.value) || 400;
+        }
+
+        function syncDelayFromSlider(val) {
+            const v = Math.min(2000, Math.max(100, Math.round(parseInt(val) / 10) * 10));
+            downloadDelaySlider.value = v;
+            downloadDelayInput.value = v;
+            saveSettings();
+        }
+
+        function syncDelayFromInput(val) {
+            let v = parseInt(val);
+            if (isNaN(v)) return;
+            v = Math.min(2000, Math.max(100, Math.round(v / 10) * 10));
+            downloadDelaySlider.value = v;
+            downloadDelayInput.value = v;
+            saveSettings();
+        }
+        
+        function updateAutoIndicators() {
+            splitAutoIndicator.style.display = autoDownloadSplitCheck.checked ? 'inline-block' : 'none';
+            mergeAutoIndicator.style.display = autoDownloadMergeCheck.checked ? 'inline-block' : 'none';
+        }
+
+        function loadSettings() {
+            const savedTheme = localStorage.getItem('app-theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeBtnText.innerHTML = 'Темная ☀️';
+            } else {
+                themeBtnText.innerHTML = 'Светлая 🌙';
+            }
+
+            autoDownloadSplitCheck.checked = localStorage.getItem('auto-download-split') === 'true';
+            autoDownloadMergeCheck.checked = localStorage.getItem('auto-download-merge') === 'true';
+            hideChunksListCheck.checked = localStorage.getItem('hide-chunks-list') === 'true';
+            downloadButtonsModeSelect.value = localStorage.getItem('download-buttons-mode') || 'both';
+
+            const savedDelay = parseInt(localStorage.getItem('download-delay')) || 400;
+            downloadDelaySlider.value = savedDelay;
+            downloadDelayInput.value = savedDelay;
+
+            updateAutoIndicators();
+        }
+
+        document.addEventListener("DOMContentLoaded", loadSettings);
+
+        function openModal() { modal.classList.add('active'); }
+        function closeModal(e) { if (!e || e.target === modal) modal.classList.remove('active'); }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-theme');
+            if (isDark) {
+                localStorage.setItem('app-theme', 'dark');
+                themeBtnText.innerHTML = 'Темная ☀️';
+            } else {
+                localStorage.setItem('app-theme', 'light');
+                themeBtnText.innerHTML = 'Светлая 🌙';
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('auto-download-split', autoDownloadSplitCheck.checked);
+            localStorage.setItem('auto-download-merge', autoDownloadMergeCheck.checked);
+            localStorage.setItem('hide-chunks-list', hideChunksListCheck.checked);
+            localStorage.setItem('download-buttons-mode', downloadButtonsModeSelect.value);
+            localStorage.setItem('download-delay', downloadDelaySlider.value);
+        }
+
+        function updateFileName(input, targetId) {
+            const labelSpan = document.getElementById(targetId);
+            if (input.files && input.files.length > 0) {
+                if (input.files.length === 1) labelSpan.textContent = input.files[0].name;
+                else labelSpan.textContent = `Выбрано файлов: ${input.files.length}`;
+            } else {
+                labelSpan.textContent = targetId === 'splitInputText' ? 'Перетащите файл или кликните для выбора' : 'Выберите одну или несколько частей .part';
+            }
+        }
+
+        // ====================== ПРЕСЕТЫ РАЗМЕРА ======================
+        function setPreset(mb) {
+            document.getElementById('chunkSize').value = mb;
+            updatePreview();
+            highlightPreset(mb);
+        }
+
+        function highlightPreset(mb) {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('active', parseFloat(btn.getAttribute('data-mb')) === parseFloat(mb));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const presets = [9, 50, 500];
+            document.querySelectorAll('.preset-btn').forEach((btn, i) => {
+                btn.setAttribute('data-mb', presets[i]);
+            });
+            highlightPreset(parseFloat(document.getElementById('chunkSize').value));
+        });
+
+        // ====================== ПРЕДПРОСМОТР КОЛИЧЕСТВА ЧАСТЕЙ ======================
+        function updatePreview() {
+            const fileInput = document.getElementById('splitInput');
+            const preview = document.getElementById('splitPreview');
+            const chunkMB = parseFloat(document.getElementById('chunkSize').value);
+
+            highlightPreset(chunkMB);
+
+            if (!fileInput.files || fileInput.files.length === 0 || isNaN(chunkMB) || chunkMB <= 0) {
+                preview.classList.add('hidden');
+                return;
+            }
+
+            const fileSize = fileInput.files[0].size;
+            const chunkSize = chunkMB * 1024 * 1024;
+            const count = Math.ceil(fileSize / chunkSize);
+            preview.classList.remove('hidden');
+            preview.innerHTML = `✂️ Будет создано частей: <strong>${count}</strong>`;
+        }
+
+        // ====================== ПРОВЕРКА ЧАСТЕЙ ПРИ СБОРКЕ ======================
+        function checkPartsList() {
+            const input = document.getElementById('mergeInput');
+            const summary = document.getElementById('partsSummary');
+            const summaryText = document.getElementById('partsSummaryText');
+            const fileList = document.getElementById('partsFileList');
+            const toggleBtn = document.getElementById('partsToggleBtn');
+
+            fileList.classList.remove('open');
+            toggleBtn.textContent = '📋 Показать список';
+
+            if (!input.files || input.files.length === 0) {
+                summary.classList.remove('visible');
+                summaryText.innerHTML = '';
+                fileList.innerHTML = '';
+                return;
+            }
+
+            const files = Array.from(input.files);
+
+            const newFormat = files
+                .map(f => {
+                    const m = f.name.match(/_part(\d+)of(\d+)\.part$/i);
+                    return m ? { name: f.name, num: parseInt(m[1]), total: parseInt(m[2]) } : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.num - b.num);
+
+            const oldFormat = files
+                .map(f => {
+                    const m = f.name.match(/_part(\d+)\.part$/i);
+                    return (m && !/_part\d+of\d+\.part$/i.test(f.name))
+                        ? { name: f.name, num: parseInt(m[1]), total: null }
+                        : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.num - b.num);
+
+            const numbered = newFormat.length > 0 ? newFormat : oldFormat;
+
+            if (numbered.length === 0) {
+                summary.classList.remove('visible');
+                summaryText.innerHTML = '';
+                fileList.innerHTML = '';
+                return;
+            }
+
+            const presentNums = new Set(numbered.map(f => f.num));
+
+            let expectedTotal = null;
+            if (newFormat.length > 0) {
+                const totals = [...new Set(newFormat.map(f => f.total))];
+                if (totals.length === 1) expectedTotal = totals[0];
+            }
+
+            const rangeMax = expectedTotal !== null ? expectedTotal : numbered[numbered.length - 1].num;
+
+            const missing = [];
+            for (let i = 1; i <= rangeMax; i++) {
+                if (!presentNums.has(i)) missing.push(i);
+            }
+
+            let summaryHtml = '';
+            if (expectedTotal !== null) {
+                summaryHtml += `Загружено: <strong>${numbered.length} из ${expectedTotal}</strong> частей. `;
+            } else {
+                summaryHtml += `Загружено: <strong>${numbered.length}</strong> ${declParts(numbered.length)}. `;
+            }
+
+            if (missing.length > 0) {
+                const missingLabels = missing.map(n => `#${String(n).padStart(3,'0')}`).join(', ');
+                summaryHtml += `<span style="color:#e03131; font-weight:700;">⚠️ Не хватает: ${missingLabels}</span>`;
+            } else if (expectedTotal !== null && numbered.length === expectedTotal) {
+                summaryHtml += `<span style="color:#2d7d46; font-weight:700;">✅ Набор полный</span>`;
+            } else {
+                summaryHtml += `<span style="color:#2d7d46; font-weight:700;">✅ Пропусков нет</span>`;
+            }
+
+            if (newFormat.length > 0) {
+                const totals = [...new Set(newFormat.map(f => f.total))];
+                if (totals.length > 1) {
+                    summaryHtml += ` <span style="color:#e03131; font-weight:700;">⚠️ Файлы от разных разделений!</span>`;
+                }
+            }
+
+            summaryText.innerHTML = summaryHtml;
+            summary.classList.add('visible');
+
+            let listHtml = '';
+            numbered.forEach(f => {
+                listHtml += `<div class="parts-check-row"><span class="part-ok">✔</span><span>${f.name}</span></div>`;
+            });
+            if (missing.length > 0) {
+                const missingLabels = missing.map(n => `#${String(n).padStart(3,'0')}`).join(', ');
+                listHtml += `<div class="parts-gap-warning">⚠️ Не хватает частей: ${missingLabels}<br>Файл будет собран некорректно!</div>`;
+            }
+            if (newFormat.length > 0) {
+                const totals = [...new Set(newFormat.map(f => f.total))];
+                if (totals.length > 1) {
+                    listHtml += `<div class="parts-gap-warning">⚠️ Файлы принадлежат разным разделениям (разное общее количество частей)! Проверьте выбор.</div>`;
+                }
+            }
+            fileList.innerHTML = listHtml;
+        }
+
+        function togglePartsList() {
+            const fileList = document.getElementById('partsFileList');
+            const toggleBtn = document.getElementById('partsToggleBtn');
+            const isOpen = fileList.classList.toggle('open');
+            toggleBtn.textContent = isOpen ? '📋 Скрыть список' : '📋 Показать список';
+        }
+
+        function declParts(n) {
+            const mod10 = n % 10, mod100 = n % 100;
+            if (mod10 === 1 && mod100 !== 11) return 'часть';
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'части';
+            return 'частей';
+        }
+
+        // ====================== DRAG & DROP ======================
+        function setupDragDrop(dropZoneId, inputId, labelId) {
+            const dropZone = document.getElementById(dropZoneId);
+            const input = document.getElementById(inputId);
+            const label = document.getElementById(labelId);
+            if (!dropZone || !input || !label) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => label.classList.add('drag-over'), false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => label.classList.remove('drag-over'), false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length === 0) return;
+                const dt = new DataTransfer();
+                if (input.multiple) {
+                    for (let file of files) dt.items.add(file);
+                } else {
+                    dt.items.add(files[0]);
+                }
+                input.files = dt.files;
+                const targetTextId = inputId === 'splitInput' ? 'splitInputText' : 'mergeInputText';
+                updateFileName(input, targetTextId);
+                if (inputId === 'splitInput') updatePreview();
+                if (inputId === 'mergeInput') checkPartsList();
+            });
+        }
+        setupDragDrop('splitDropZone', 'splitInput', 'splitLabel');
+        setupDragDrop('mergeDropZone', 'mergeInput', 'mergeLabel');
+
+        // ====================== ЛОГИКА ОБРАБОТКИ ======================
+        const createdURLs = [];
+        function revokeAllURLs() {
+            createdURLs.forEach(url => URL.revokeObjectURL(url));
+            createdURLs.length = 0;
+        }
+
+        const XOR_KEY = 0x5A;
+        function xorBuffer(buffer) {
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.length; i++) bytes[i] ^= XOR_KEY;
+            return buffer;
+        }
+
+        async function triggerDownloads(linksArray) {
+            const delay = getDownloadDelay();
+            for (let link of linksArray) {
+                if (!link.classList.contains('downloaded')) {
+                    link.click();
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        }
+
+        let currentAbortController = null;
+        let currentChunksData = [];
+        let currentBaseName = '';
+        let currentOriginalExt = '';
+
+        function cancelSplit() {
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+        }
+
+        function setSettingsEnabled(enabled) {
+            document.getElementById('settingsToggle').disabled = !enabled;
+        }
+
+        // ====================== ДИНАМИЧЕСКАЯ ЗАГРУЗКА JSZip ======================
+        function loadJSZip() {
+            return new Promise((resolve, reject) => {
+                // 1. Проверяем кэш localStorage
+                const cached = localStorage.getItem('jszip_cache');
+                if (cached) {
+                    try {
+                        eval(cached);
+                        if (typeof JSZip !== 'undefined') {
+                            resolve();
+                            return;
+                        }
+                    } catch (e) {
+                        localStorage.removeItem('jszip_cache');
+                    }
+                }
+
+                // 2. Загружаем с CDN
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                script.onload = () => {
+                    // Сохраняем в кэш
+                    fetch(script.src)
+                        .then(res => res.text())
+                        .then(code => {
+                            try { localStorage.setItem('jszip_cache', code); } catch (e) {}
+                        })
+                        .catch(() => {});
+                    resolve();
+                };
+                script.onerror = () => {
+                    reject(new Error('Не удалось загрузить библиотеку JSZip. Проверьте подключение к интернету.'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // ====================== ZIP-АРХИВ (НАДЁЖНЫЙ) ======================
+        async function downloadZip() {
+            if (currentChunksData.length === 0) {
+                alert('Нет данных для архивации.');
+                return;
+            }
+
+            try {
+                await loadJSZip();
+
+                const zip = new JSZip();
+                for (const part of currentChunksData) {
+                    if (part.blob && part.blob instanceof Blob) {
+                        zip.file(part.fileName, part.blob);
+                    }
+                }
+
+                const zipName = currentBaseName + (currentOriginalExt ? currentOriginalExt : '') + '_parts.zip';
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = zipName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+            } catch (err) {
+                console.error('Ошибка создания ZIP:', err);
+                alert('Не удалось создать ZIP-архив: ' + (err.message || 'неизвестная ошибка'));
+            }
+        }
+
+        // ====================== РАЗДЕЛЕНИЕ ======================
+        async function splitFile() {
+            const fileInput = document.getElementById('splitInput');
+            const file = fileInput.files[0];
+            if (!file) return alert('Пожалуйста, сначала выберите файл для разделения.');
+
+            if (/_part\d+(?:of\d+)?\.part$/i.test(file.name)) {
+                const progressDiv = document.getElementById('splitProgress');
+                progressDiv.style.display = 'block';
+                progressDiv.innerHTML = `<span class="inline-error">❌ ОШИБКА: Этот файл уже является частью (${file.name}). Повторное разделение запрещено!</span>`;
+                return;
+            }
+
+            const progressDiv = document.getElementById('splitProgress');
+            const actionsDiv = document.getElementById('splitActionsContainer');
+            const chunksListDiv = document.getElementById('chunksList');
+            const splitBtn = document.getElementById('splitBtn');
+            const cancelBtn = document.getElementById('cancelSplitBtn');
+            const statsCard = document.getElementById('splitStatsCard');
+            const preview = document.getElementById('splitPreview');
+            
+            revokeAllURLs();
+            actionsDiv.innerHTML = '';
+            chunksListDiv.innerHTML = '';
+            statsCard.classList.add('hidden');
+            statsCard.innerHTML = '';
+            currentChunksData = [];
+            currentBaseName = '';
+            currentOriginalExt = '';
+            
+            chunksListDiv.style.display = hideChunksListCheck.checked ? 'none' : 'block';
+            
+            let chunkMB = parseFloat(document.getElementById('chunkSize').value);
+            if (isNaN(chunkMB) || chunkMB < 0.1) {
+                alert('Размер части должен быть не менее 0.1 МБ. Установлено значение 9 МБ.');
+                chunkMB = 9;
+                document.getElementById('chunkSize').value = 9;
+            }
+            
+            const chunkSize = chunkMB * 1024 * 1024;
+            const chunksCount = Math.ceil(file.size / chunkSize);
+            
+            const lastDot = file.name.lastIndexOf('.');
+            const baseName = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
+            const originalExt = lastDot !== -1 ? file.name.substring(lastDot) : '';
+            const PART_EXT = '.part';
+
+            currentBaseName = baseName;
+            currentOriginalExt = originalExt;
+
+            const abortController = new AbortController();
+            currentAbortController = abortController;
+
+            progressDiv.style.display = 'block';
+            progressDiv.innerHTML = `
+                <div>⏳ Разделяем на ${chunksCount} частей по ${chunkMB} МБ...</div>
+                <div class="progress-bar-container">
+                    <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                <div id="progressPercent" style="text-align:center; margin-top:5px; font-size:0.9em;">0%</div>
+            `;
+            cancelBtn.style.display = 'inline-block';
+            splitBtn.disabled = true;
+            splitBtn.textContent = 'Разделение...';
+            setSettingsEnabled(false);
+            preview.classList.add('hidden');
+
+            const splitStartTime = Date.now();
+
+            const downloadLinks = [];
+            const partFileNames = [];
+            const partURLs = [];
+
+            try {
+                for (let i = 0; i < chunksCount; i++) {
+                    if (abortController.signal.aborted) {
+                        revokeAllURLs();
+                        chunksListDiv.innerHTML = '';
+                        currentChunksData = [];
+                        progressDiv.innerHTML = '<span class="warning">❌ Разделение отменено пользователем.</span>';
+                        return;
+                    }
+
+                    const start = i * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    const arrayBuf = await chunk.arrayBuffer();
+                    xorBuffer(arrayBuf);
+                    const encryptedBlob = new Blob([arrayBuf], { type: 'application/octet-stream' });
+
+                    const partNum = String(i + 1).padStart(3, '0');
+                    const totalNum = String(chunksCount).padStart(3, '0');
+                    const fileName = `${baseName}${originalExt}_part${partNum}of${totalNum}${PART_EXT}`;
+                    const url = URL.createObjectURL(encryptedBlob);
+                    createdURLs.push(url);
+                    partURLs.push(url);
+                    partFileNames.push(fileName);
+                    currentChunksData.push({ blob: encryptedBlob, fileName: fileName });
+
+                    const percent = Math.round(((i + 1) / chunksCount) * 100);
+                    document.getElementById('progressBarFill').style.width = `${percent}%`;
+                    document.getElementById('progressPercent').textContent = `${percent}%`;
+
+                    const chunkSizeMB = (chunk.size / 1024 / 1024).toFixed(2);
+                    const div = document.createElement('div');
+                    div.className = 'chunk';
+                    div.innerHTML = `
+                        <div class="chunk-info">
+                            <strong>📄 Часть ${i + 1}/${chunksCount}</strong> — ${chunkSizeMB} МБ (зашифрована)<br>
+                            <span style="font-size: 0.9em; opacity: 0.8;">${fileName}</span>
+                            <div class="encrypted-note">🔒 Не пытайтесь открыть — файл нечитаем.</div>
+                        </div>
+                        <div class="chunk-actions">
+                            ${!autoDownloadSplitCheck.checked ? `<a href="${url}" download="${fileName}" class="download-link">⬇️ Скачать</a>` : ''}
+                        </div>
+                    `;
+
+                    const downloadLink = div.querySelector('.download-link');
+                    if (downloadLink) {
+                        downloadLink.addEventListener('click', function() {
+                            setTimeout(() => {
+                                downloadLink.textContent = '✅ Скачано';
+                                downloadLink.classList.add('downloaded');
+                            }, 300);
+                        });
+                        downloadLinks.push(downloadLink);
+                    }
+                    chunksListDiv.appendChild(div);
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+
+                if (!autoDownloadSplitCheck.checked) {
+                    const mode = downloadButtonsModeSelect.value;
+
+                    if (mode === 'all' || mode === 'both') {
+                        const downloadAllBtn = document.createElement('button');
+                        downloadAllBtn.className = 'download-all-btn';
+                        if (chunksCount > 1) {
+                            downloadAllBtn.textContent = `⬇️ Скачать все части по отдельности (${chunksCount} шт.)`;
+                        } else {
+                            downloadAllBtn.textContent = `⬇️ Скачать часть`;
+                        }
+                        downloadAllBtn.addEventListener('click', () => triggerDownloads(downloadLinks));
+                        actionsDiv.appendChild(downloadAllBtn);
+                    }
+
+                    if (mode === 'zip' || mode === 'both') {
+                        const zipBtn = document.createElement('button');
+                        zipBtn.className = 'zip-btn';
+                        zipBtn.textContent = `🗜️ Скачать ZIP-архив`;
+                        zipBtn.addEventListener('click', () => downloadZip());
+                        actionsDiv.appendChild(zipBtn);
+                    }
+                }
+
+                if (autoDownloadSplitCheck.checked) {
+                    const tempLinks = [];
+                    for (let i = 0; i < partURLs.length; i++) {
+                        const a = document.createElement('a');
+                        a.href = partURLs[i];
+                        a.download = partFileNames[i];
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        tempLinks.push(a);
+                    }
+                    await triggerDownloads(tempLinks);
+                    tempLinks.forEach(a => a.remove());
+                }
+
+                progressDiv.innerHTML = `<span class="success">✅ Разделение завершено! Всего частей: ${chunksCount}</span><br>
+                    <small>Все части с расширением .part. Для восстановления используйте сборку.</small>`;
+
+                const elapsed = ((Date.now() - splitStartTime) / 1000).toFixed(1);
+                const origSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                statsCard.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Исходный размер</span>
+                        <span class="stat-value">${origSizeMB} МБ</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Частей создано</span>
+                        <span class="stat-value">${chunksCount}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Время обработки</span>
+                        <span class="stat-value">${elapsed} с</span>
+                    </div>
+                `;
+                statsCard.classList.remove('hidden');
+                updatePreview();
+
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                    progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка: ${error.message}</span>`;
+                }
+            } finally {
+                splitBtn.disabled = false;
+                splitBtn.textContent = '✂️ Разделить файл на части';
+                cancelBtn.style.display = 'none';
+                currentAbortController = null;
+                setSettingsEnabled(true);
+                updatePreview();
+            }
+        }
+
+        // ====================== СБОРКА ======================
+        async function mergeFiles() {
+            const input = document.getElementById('mergeInput');
+            const files = Array.from(input.files);
+            if (files.length === 0) return alert('Выберите хотя бы один файл .part.');
+
+            const progressDiv = document.getElementById('mergeProgress');
+            const resultDiv = document.getElementById('mergeResult');
+            const mergeBtn = document.getElementById('mergeBtn');
+            
+            revokeAllURLs();
+            resultDiv.innerHTML = '';
+            
+            progressDiv.style.display = 'block';
+            progressDiv.textContent = '🔍 Сортируем...';
+
+            files.sort((a, b) => {
+                const numA = (a.name.match(/_part(\d+)(?:of\d+)?\.part$/i) || [])[1];
+                const numB = (b.name.match(/_part(\d+)(?:of\d+)?\.part$/i) || [])[1];
+                return (parseInt(numA) || 0) - (parseInt(numB) || 0);
+            });
+
+            mergeBtn.disabled = true;
+            mergeBtn.textContent = 'Сборка...';
+            setSettingsEnabled(false);
+
+            try {
+                const chunks = [];
+                for (let i = 0; i < files.length; i++) {
+                    progressDiv.textContent = `⏳ Чтение и расшифровка: ${i + 1} из ${files.length} (${files[i].name})`;
+                    
+                    const buffer = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(new Error(`Ошибка чтения файла "${files[i].name}".`));
+                        reader.readAsArrayBuffer(files[i]);
+                    });
+
+                    xorBuffer(buffer);
+                    chunks.push(buffer);
+                }
+
+                progressDiv.textContent = '🧩 Объединяем данные...';
+                const finalBlob = new Blob(chunks);
+                const url = URL.createObjectURL(finalBlob);
+                createdURLs.push(url);
+
+                const firstFileName = files[0].name;
+                const originalName = firstFileName.replace(/_part\d+(?:of\d+)?\.part$/i, '') || firstFileName;
+                const finalName = (originalName !== firstFileName) ? originalName : `восстановленный_${firstFileName}`;
+
+                const finalSizeMB = (finalBlob.size / 1024 / 1024).toFixed(2);
+                const partsWord = files.length === 1 ? 'одной части' : `${files.length} частей`;
+                const autoDownload = autoDownloadMergeCheck.checked;
+
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'chunk';
+                wrapperDiv.style.borderLeftColor = '#2d7d46';
+                wrapperDiv.innerHTML = `
+                    <div class="chunk-info">
+                        <span class="success">✅ Файл успешно собран и расшифрован!</span><br>
+                        <strong>📦 ${finalName}</strong><br>
+                        <small>Размер: ${finalSizeMB} МБ (из ${partsWord})</small>
+                    </div>
+                    ${!autoDownload ? `<a href="${url}" download="${finalName}" class="download-link">⬇️ Скачать (${finalSizeMB} МБ)</a>` : ''}
+                `;
+
+                if (!autoDownload) {
+                    const link = wrapperDiv.querySelector('.download-link');
+                    link.addEventListener('click', function() {
+                        setTimeout(() => {
+                            link.textContent = '✅ Скачано';
+                            link.classList.add('downloaded');
+                        }, 300);
+                    });
+                }
+
+                resultDiv.appendChild(wrapperDiv);
+                progressDiv.innerHTML = `<span class="success">✅ Готово! Файл восстановлен как ${finalName}.</span>`;
+
+                if (autoDownload) {
+                    const tempLink = document.createElement('a');
+                    tempLink.href = url;
+                    tempLink.download = finalName;
+                    tempLink.style.display = 'none';
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    setTimeout(() => tempLink.remove(), 1000);
+                }
+
+            } catch (error) {
+                console.error(error);
+                progressDiv.innerHTML = `<span style="color: red;">❌ Ошибка сборки: ${error.message}</span>`;
+            } finally {
+                mergeBtn.disabled = false;
+                mergeBtn.textContent = '🧩 Собрать / расшифровать';
+                setSettingsEnabled(true);
+            }
+        }
+
+        window.addEventListener('beforeunload', () => revokeAllURLs());
+    </script>
+</body>
+</html>
