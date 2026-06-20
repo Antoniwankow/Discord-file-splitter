@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Офлайн-загрузчик</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #222;
+            --status-bg: #e9ecef;
+            --status-text: #222;
+            --border-color: #dee2e6;
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+        }
+        body.dark-theme {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --status-bg: #2d2d2d;
+            --status-text: #e0e0e0;
+            --border-color: #444;
+            --error-bg: #5a1a1a;
+            --error-text: #f8d7da;
+            --success-bg: #1a3a1a;
+            --success-text: #d4edda;
+        }
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: background 0.2s, color 0.2s;
+        }
+        #status {
+            padding: 12px 16px;
+            border-radius: 6px;
+            background: var(--status-bg);
+            color: var(--status-text);
+            margin: 16px 0;
+        }
+        #status.error {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        #status.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+        #root {
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+        .error-box {
+            color: var(--error-text);
+            background: var(--error-bg);
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid var(--error-text);
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="mainTitle">⏳ Загрузка приложения...</h1>
+    <div id="status">Инициализация...</div>
+    <div id="root"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ========== НАСТРОЙКИ ==========
+            const REPO_BASE = 'https://raw.githubusercontent.com/Antoniwankow/Discord-file-splitter/refs/heads/main/';
+            const MANIFEST_URL = REPO_BASE + 'manifest.json';
+            const CACHE_NAME = 'app-cache-v2';
+            const THEME_KEY = 'theme';
+            const STORED_URL_KEY = 'cached_file_url'; // ключ для хранения URL в localStorage
+
+            // ========== DOM ==========
+            const titleEl = document.getElementById('mainTitle');
+            const statusEl = document.getElementById('status');
+            const rootEl = document.getElementById('root');
+
+            // ========== ТЕМА ==========
+            function applyTheme() {
+                try {
+                    const savedTheme = localStorage.getItem(THEME_KEY);
+                    if (savedTheme === 'dark') {
+                        document.body.classList.add('dark-theme');
+                    } else {
+                        document.body.classList.remove('dark-theme');
+                    }
+                } catch (e) {
+                    console.warn('Ошибка применения темы:', e);
+                }
+            }
+
+            // ========== СТАТУС ==========
+            function setStatus(msg, isError = false) {
+                statusEl.textContent = msg;
+                statusEl.className = isError ? 'error' : 'success';
+                console.log(msg);
+            }
+
+            function hideLoader() {
+                titleEl.classList.add('hidden');
+                statusEl.classList.add('hidden');
+            }
+
+            // ========== РАБОТА С КЭШЕМ ==========
+            async function saveToCache(url, response) {
+                const cache = await caches.open(CACHE_NAME);
+                await cache.put(url, response.clone());
+                console.log(`✅ Кэш обновлён: ${url}`);
+            }
+
+            async function loadFromCache(url) {
+                const cache = await caches.open(CACHE_NAME);
+                const response = await cache.match(url);
+                if (response) {
+                    return await response.text();
+                }
+                return null;
+            }
+
+            async function deleteFromCache(url) {
+                const cache = await caches.open(CACHE_NAME);
+                await cache.delete(url);
+                console.log(`🗑️ Кэш удалён: ${url}`);
+            }
+
+            // ========== ЗАГРУЗКА МАНИФЕСТА ==========
+            async function fetchManifest() {
+                const response = await fetch(MANIFEST_URL, { cache: 'no-cache' });
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('manifest.json не найден (404)');
+                    }
+                    throw new Error(`Ошибка загрузки манифеста: ${response.status}`);
+                }
+                const text = await response.text();
+                let json;
+                try {
+                    json = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Некорректный JSON в manifest.json');
+                }
+                if (!json.entry) {
+                    throw new Error('В manifest.json отсутствует поле "entry"');
+                }
+                return json.entry;
+            }
+
+            // ========== ЗАГРУЗКА ОСНОВНОГО ФАЙЛА ==========
+            async function loadAppFile(fileName) {
+                const encodedName = encodeURIComponent(fileName);
+                const fileUrl = REPO_BASE + encodedName;
+                const response = await fetch(fileUrl, { cache: 'no-cache' });
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        await deleteFromCache(fileUrl);
+                        throw new Error(`Файл "${fileName}" не найден (404)`);
+                    }
+                    throw new Error(`Ошибка загрузки файла: ${response.status}`);
+                }
+                // Сохраняем в кэш
+                await saveToCache(fileUrl, response);
+                // Сохраняем URL в localStorage для офлайн-доступа
+                localStorage.setItem(STORED_URL_KEY, fileUrl);
+                const html = await response.text();
+                return html;
+            }
+
+            // ========== ПРИМЕНЕНИЕ HTML ==========
+            function applyApp(html) {
+                rootEl.innerHTML = html;
+
+                const firstChild = rootEl.firstElementChild;
+                if (firstChild) {
+                    firstChild.style.marginTop = '0';
+                    firstChild.style.paddingTop = '0';
+                }
+
+                const scripts = rootEl.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    for (let attr of oldScript.attributes) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                    newScript.textContent = oldScript.textContent;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+
+                const event = new Event('DOMContentLoaded', { bubbles: true, cancelable: false });
+                document.dispatchEvent(event);
+                if (typeof window.onload === 'function') {
+                    window.onload();
+                }
+            }
+
+            // ========== ГЛАВНАЯ ФУНКЦИЯ ==========
+            async function bootstrap() {
+                applyTheme();
+
+                // Сначала пытаемся загрузить свежую версию с GitHub
+                try {
+                    setStatus('🔄 Загрузка манифеста...');
+                    const fileName = await fetchManifest();
+                    setStatus(`📄 Найден файл: ${fileName}`);
+                    setStatus('⬇️ Загрузка приложения...');
+                    const html = await loadAppFile(fileName);
+                    setStatus('✅ Загружено и сохранено в кэш');
+                    applyApp(html);
+                    hideLoader();
+                    return;
+                } catch (error) {
+                    console.warn('Ошибка при загрузке с GitHub:', error.message);
+                    // Если ошибка 404 (файл не найден) – не используем кэш, т.к. он удалён
+                    if (error.message.includes('404')) {
+                        setStatus('❌ Ошибка: ' + error.message, true);
+                        rootEl.innerHTML = `
+                            <div class="error-box">
+                                <strong>Не удалось загрузить приложение</strong><br>
+                                ${error.message}<br>
+                                <small>Проверьте манифест и наличие файла в репозитории.</small>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
+                // Если дошли сюда – значит, была ошибка (сеть, таймаут и т.п.)
+                // Пытаемся восстановиться из кэша по сохранённому URL
+                setStatus('⚠️ Проблема с сетью, ищем кэш...', true);
+                const cachedUrl = localStorage.getItem(STORED_URL_KEY);
+                if (cachedUrl) {
+                    const cachedHtml = await loadFromCache(cachedUrl);
+                    if (cachedHtml) {
+                        setStatus('📦 Используем кэшированную версию');
+                        applyApp(cachedHtml);
+                        hideLoader();
+                        return;
+                    } else {
+                        // Кэш по URL не найден – возможно, был очищен
+                        console.warn('Кэш по сохранённому URL не найден');
+                        localStorage.removeItem(STORED_URL_KEY); // очищаем невалидный URL
+                    }
+                }
+
+                // Если кэша нет – окончательная ошибка
+                setStatus('❌ Нет интернета и нет кэша.', true);
+                rootEl.innerHTML = `
+                    <div class="error-box">
+                        <strong>Приложение недоступно офлайн</strong><br>
+                        Проверьте подключение к интернету для первой загрузки.
+                    </div>
+                `;
+            }
+
+            bootstrap();
+        })();
+    </script>
+</body>
+</html>
