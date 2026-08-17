@@ -46,21 +46,6 @@ import java.io.OutputStream;
 
 @CapacitorPlugin(name = "SystemFileSaver")
 public class SystemFileSaverPlugin extends Plugin {
-    private Uri cleanUri(String value) {
-        if (value == null) return null;
-        // SAF URIs must not contain literal whitespace in the authority.
-        return Uri.parse(value.trim().replaceAll("\\\\s+", ""));
-    }
-
-    private Uri asDocumentUri(Uri uri) {
-        if (uri == null) return null;
-        if (DocumentsContract.isTreeUri(uri)) {
-            String documentId = DocumentsContract.getTreeDocumentId(uri);
-            return DocumentsContract.buildDocumentUriUsingTree(uri, documentId);
-        }
-        return uri;
-    }
-
     @PluginMethod
     public void persistDirectory(PluginCall call) {
         String uriString = call.getString("uri");
@@ -69,39 +54,11 @@ public class SystemFileSaverPlugin extends Plugin {
             return;
         }
         try {
-            Uri uri = cleanUri(uriString);
+            Uri uri = Uri.parse(uriString);
             int flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 | android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
             getContext().getContentResolver().takePersistableUriPermission(uri, flags);
             call.resolve();
-        } catch (Exception e) {
-            // Some providers do not expose persistable permissions. The current
-            // activity permission is still usable, so do not fail folder selection.
-            call.resolve();
-        }
-    }
-
-    @PluginMethod
-    public void createDirectory(PluginCall call) {
-        String parentUriString = call.getString("parentUri");
-        String name = call.getString("name");
-        if (parentUriString == null || name == null) {
-            call.reject("parentUri and name are required");
-            return;
-        }
-        try {
-            ContentResolver resolver = getContext().getContentResolver();
-            Uri parentUri = asDocumentUri(cleanUri(parentUriString));
-            Uri directoryUri = DocumentsContract.createDocument(
-                resolver,
-                parentUri,
-                DocumentsContract.Document.MIME_TYPE_DIR,
-                name
-            );
-            if (directoryUri == null) throw new Exception("Could not create destination directory");
-            JSObject result = new JSObject();
-            result.put("uri", directoryUri.toString());
-            call.resolve(result);
         } catch (Exception e) {
             call.reject(e.getMessage(), e);
         }
@@ -118,7 +75,7 @@ public class SystemFileSaverPlugin extends Plugin {
         }
         try {
             ContentResolver resolver = getContext().getContentResolver();
-            Uri directoryUri = asDocumentUri(cleanUri(directoryUriString));
+            Uri directoryUri = Uri.parse(directoryUriString);
             Uri fileUri = DocumentsContract.createDocument(resolver, directoryUri, mimeType, name);
             if (fileUri == null) throw new Exception("Could not create destination file");
             JSObject result = new JSObject();
@@ -139,7 +96,7 @@ public class SystemFileSaverPlugin extends Plugin {
         }
         try {
             byte[] bytes = Base64.decode(data, Base64.DEFAULT);
-            OutputStream output = getContext().getContentResolver().openOutputStream(cleanUri(uriString), "wa");
+            OutputStream output = getContext().getContentResolver().openOutputStream(Uri.parse(uriString), "wa");
             if (output == null) throw new Exception("Could not open destination file");
             output.write(bytes);
             output.flush();
