@@ -19,12 +19,7 @@
   let outputDirectory = localStorage.getItem('android-output-directory') || '';
   let pickerBusy = false;
   let nativeSaveQueue = Promise.resolve();
-  const folderCache = new Map();
   const CHUNK_SIZE = 4 * 1024 * 1024;
-
-  function cleanUri(uri) {
-    return String(uri || '').trim().replace(/\s+/g, '');
-  }
 
   function setStatus(text) {
     const button = document.getElementById('androidOutputDirectoryButton');
@@ -37,9 +32,8 @@
     try {
       const result = await FilePicker.pickDirectory();
       if (!result || !result.path) return outputDirectory;
-      outputDirectory = cleanUri(result.path);
+      outputDirectory = result.path;
       localStorage.setItem('android-output-directory', outputDirectory);
-      folderCache.clear();
       try {
         await SystemFileSaver.persistDirectory({ uri: outputDirectory });
       } catch (e) {
@@ -59,9 +53,7 @@
   }
 
   async function ensureOutputDirectory() {
-    if (outputDirectory && outputDirectory.startsWith('content://')) return outputDirectory;
-    outputDirectory = '';
-    localStorage.removeItem('android-output-directory');
+    if (outputDirectory) return outputDirectory;
     return chooseOutputDirectory();
   }
 
@@ -118,56 +110,13 @@
     });
   }
 
-  function safeFolderName(name) {
-    return String(name || 'Файл')
-      .replace(/[\\/:*?"<>|]/g, '_')
-      .replace(/[. ]+$/g, '')
-      .slice(0, 120) || 'Файл';
-  }
-
-  function getPartsFolderName(fileName) {
-    // Examples: movie.zip.part001, movie.zip.part1, movie.part-01
-    const base = String(fileName || 'Файл').replace(/\.part(?:[-_]?\d+).*$/i, '');
-    return safeFolderName(base || 'Файл');
-  }
-
-  function isPartFile(fileName) {
-    return /\.part(?:[-_]?\d+)/i.test(String(fileName || ''));
-  }
-
-  async function getOrCreateFolder(parentUri, name) {
-    const key = `${cleanUri(parentUri)}::${name}`;
-    if (folderCache.has(key)) return folderCache.get(key);
-    const result = await SystemFileSaver.createDirectory({
-      parentUri: cleanUri(parentUri),
-      name
-    });
-    const uri = result && result.uri;
-    if (!uri) throw new Error('Android не вернул URI папки.');
-    folderCache.set(key, uri);
-    return uri;
-  }
-
-  async function getSaveDirectory(fileName) {
-    const root = await ensureOutputDirectory();
-    if (!root) return '';
-
-    if (isPartFile(fileName)) {
-      const partsRoot = await getOrCreateFolder(root, 'Части');
-      return getOrCreateFolder(partsRoot, getPartsFolderName(fileName));
-    }
-
-    return getOrCreateFolder(root, 'Собранные файлы');
-  }
-
   async function saveBlobNative(blob, fileName, mimeType) {
-    const name = String(fileName || 'download.bin');
-    const directory = await getSaveDirectory(name);
+    const directory = await ensureOutputDirectory();
     if (!directory) return false;
 
     const started = await SystemFileSaver.startFile({
-      directoryUri: cleanUri(directory),
-      name,
+      directoryUri: directory,
+      name: fileName,
       mimeType: mimeType || blob.type || 'application/octet-stream'
     });
     const uri = started && started.uri;
@@ -177,12 +126,12 @@
       for (let offset = 0; offset < blob.size; offset += CHUNK_SIZE) {
         const chunk = blob.slice(offset, Math.min(offset + CHUNK_SIZE, blob.size));
         const data = await base64FromBlob(chunk);
-        await SystemFileSaver.writeChunk({ uri: cleanUri(uri), data });
+        await SystemFileSaver.writeChunk({ uri, data });
       }
-      await SystemFileSaver.finishFile({ uri: cleanUri(uri) });
+      await SystemFileSaver.finishFile({ uri });
       return true;
     } catch (e) {
-      try { await SystemFileSaver.finishFile({ uri: cleanUri(uri) }); } catch (_) {}
+      try { await SystemFileSaver.finishFile({ uri }); } catch (_) {}
       throw e;
     }
   }
