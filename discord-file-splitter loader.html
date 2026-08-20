@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Офлайн-загрузчик</title>
+
+    <!-- =========================================================
+         ПРИМЕНЕНИЕ ТЕМЫ ДО ОТРИСОВКИ СТРАНИЦЫ
+         ========================================================= -->
+
+    <script>
+        (function () {
+            try {
+                const theme = localStorage.getItem('app-theme');
+
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-theme');
+                }
+            } catch (error) {
+                console.warn('Не удалось получить тему:', error);
+            }
+        })();
+    </script>
+
+    <style>
+
+        /* =========================================================
+           СВЕТЛАЯ ТЕМА
+           ========================================================= */
+
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #222;
+
+            --status-bg: #e9ecef;
+            --status-text: #222;
+
+            --border-color: #dee2e6;
+
+            --button-bg: #ffffff;
+            --button-text: #222;
+            --button-border: #ced4da;
+            --button-hover: #e9ecef;
+
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+
+            --success-bg: #d4edda;
+            --success-text: #155724;
+
+            --warning-bg: #fff3cd;
+            --warning-text: #664d03;
+        }
+
+
+        /* =========================================================
+           ТЁМНАЯ ТЕМА
+           ========================================================= */
+
+        html.dark-theme {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+
+            --status-bg: #2d2d2d;
+            --status-text: #e0e0e0;
+
+            --border-color: #444;
+
+            --button-bg: #2d2d2d;
+            --button-text: #e0e0e0;
+            --button-border: #555;
+            --button-hover: #3a3a3a;
+
+            --error-bg: #5a1a1a;
+            --error-text: #f8d7da;
+
+            --success-bg: #1a3a1a;
+            --success-text: #d4edda;
+
+            --warning-bg: #4a3b00;
+            --warning-text: #ffe69c;
+        }
+
+
+        /* =========================================================
+           ОСНОВА
+           ========================================================= */
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+
+        body {
+            font-family: system-ui, sans-serif;
+
+            padding: 20px;
+
+            background: var(--bg-color);
+            color: var(--text-color);
+
+            transition:
+                background 0.2s,
+                color 0.2s;
+        }
+
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        /* =========================================================
+           ЗАГРУЗЧИК
+           ========================================================= */
+
+        #loader {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+
+        #loader h1 {
+            margin-top: 0;
+        }
+
+
+        /* =========================================================
+           СТАТУС
+           ========================================================= */
+
+        #status {
+            padding: 12px 16px;
+
+            border-radius: 6px;
+
+            background: var(--status-bg);
+            color: var(--status-text);
+
+            margin: 16px 0;
+        }
+
+
+        #status.error {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+
+
+        #status.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+
+        #status.warning {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+
+        /* =========================================================
+           ИНДИКАТОР КЭША
+           ========================================================= */
+
+        #cacheStatus {
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            padding: 12px 16px;
+
+            border: 1px solid var(--border-color);
+
+            border-radius: 6px;
+
+            background: var(--status-bg);
+        }
+
+
+        #cacheIndicator {
+            width: 11px;
+            height: 11px;
+
+            flex-shrink: 0;
+
+            border-radius: 50%;
+
+            background: #dc3545;
+        }
+
+
+        #cacheIndicator.loaded {
+            background: #198754;
+        }
+
+
+        #cacheIndicator.loading {
+            background: #ffc107;
+
+            animation: cachePulse 1s infinite;
+        }
+
+
+        @keyframes cachePulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.35;
+            }
+        }
+
+
+        #cacheVersion {
+            margin-left: auto;
+
+            font-size: 14px;
+
+            opacity: 0.75;
+        }
+
+
+        /* =========================================================
+           КНОПКИ
+           ========================================================= */
+
+        #controls {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin: 16px 0;
+        }
+
+
+        button {
+            appearance: none;
+
+            border: 1px solid var(--button-border);
+
+            border-radius: 6px;
+
+            background: var(--button-bg);
+            color: var(--button-text);
+
+            padding: 10px 16px;
+
+            font-size: 15px;
+            font-family: inherit;
+
+            cursor: pointer;
+
+            transition:
+                background 0.15s,
+                opacity 0.15s;
+        }
+
+
+        button:hover:not(:disabled) {
+            background: var(--button-hover);
+        }
+
+
+        button:disabled {
+            opacity: 0.5;
+
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<div id="loader">
+
+    <h1>
+        Офлайн-загрузчик
+    </h1>
+
+
+    <div id="status">
+        Проверка кэша...
+    </div>
+
+
+    <!-- =========================================================
+         СОСТОЯНИЕ КЭША
+         ========================================================= -->
+
+    <div id="cacheStatus">
+
+        <span id="cacheIndicator"></span>
+
+        <span id="cacheStatusText">
+            Проверка кэша...
+        </span>
+
+        <span id="cacheVersion">
+            Версия: —
+        </span>
+
+    </div>
+
+
+    <!-- =========================================================
+         КНОПКИ
+         ========================================================= -->
+
+    <div id="controls">
+
+        <button id="updateButton">
+            🔄 Загрузить / Обновить
+        </button>
+
+
+        <button
+            id="cacheButton"
+            disabled
+        >
+            📦 Загрузить страницу из кэша
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+(function () {
+
+    'use strict';
+
+
+    // =========================================================
+    // НАСТРОЙКИ
+    // =========================================================
+
+    const REPO_BASE =
+        'https://raw.githubusercontent.com/Antoniwankow/Discord-file-splitter/refs/heads/main/';
+
+
+    const MANIFEST_URL =
+        REPO_BASE + 'manifest.json';
+
+
+    const CACHE_NAME =
+        'app-cache-v6';
+
+
+    /*
+     * Основная страница использует именно app-theme.
+     */
+
+    const THEME_KEY =
+        'app-theme';
+
+
+    const STORED_URL_KEY =
+        'cached_file_url';
+
+
+    const CACHED_VERSION_KEY =
+        'cached_app_version';
+
+
+    // =========================================================
+    // DOM
+    // =========================================================
+
+    const statusEl =
+        document.getElementById(
+            'status'
+        );
+
+
+    const updateButton =
+        document.getElementById(
+            'updateButton'
+        );
+
+
+    const cacheButton =
+        document.getElementById(
+            'cacheButton'
+        );
+
+
+    const cacheIndicator =
+        document.getElementById(
+            'cacheIndicator'
+        );
+
+
+    const cacheStatusText =
+        document.getElementById(
+            'cacheStatusText'
+        );
+
+
+    const cacheVersion =
+        document.getElementById(
+            'cacheVersion'
+        );
+
+
+    // =========================================================
+    // ТЕМА
+    // =========================================================
+
+    function getTheme() {
+
+        try {
+
+            return localStorage.getItem(
+                THEME_KEY
+            );
+
+        } catch (error) {
+
+            console.warn(
+                'Ошибка чтения темы:',
+                error
+            );
+
+            return null;
+        }
+    }
+
+
+    function applyTheme() {
+
+        const theme =
+            getTheme();
+
+
+        const isDark =
+            theme === 'dark';
+
+
+        document.documentElement.classList.toggle(
+            'dark-theme',
+            isDark
+        );
+
+
+        document.body.classList.toggle(
+            'dark-theme',
+            isDark
+        );
+
+
+        document.documentElement.style.colorScheme =
+            isDark
+                ? 'dark'
+                : 'light';
+    }
+
+
+    applyTheme();
+
+
+    /*
+     * Если тема была изменена в другой вкладке,
+     * обновляем загрузчик.
+     */
+
+    window.addEventListener(
+        'storage',
+        function (event) {
+
+            if (
+                event.key ===
+                THEME_KEY
+            ) {
+
+                applyTheme();
+            }
+        }
+    );
+
+
+    // =========================================================
+    // СТАТУС
+    // =========================================================
+
+    function setStatus(
+        message,
+        type = ''
+    ) {
+
+        statusEl.textContent =
+            message;
+
+
+        statusEl.className =
+            type;
+
+
+        console.log(
+            message
+        );
+    }
+
+
+    // =========================================================
+    // ВЕРСИЯ ИЗ НАЗВАНИЯ ФАЙЛА
+    // =========================================================
+
+    function getVersionFromFileName(
+        fileName
+    ) {
+
+        const decoded =
+            decodeURIComponent(
+                fileName
+            );
+
+
+        /*
+         * Например:
+         *
+         * assets/discord-file-splitter v1.6.1.html
+         *
+         * Результат:
+         *
+         * v1.6.1
+         */
+
+        const match =
+            decoded.match(
+                /(?:^|[\s_-])(v?\d+(?:\.\d+)+)(?=\.html?$)/i
+            );
+
+
+        if (match) {
+
+            return match[1];
+        }
+
+
+        /*
+         * Если номер версии не найден,
+         * показываем название файла без .html.
+         */
+
+        return decoded
+            .split('/')
+            .pop()
+            .replace(
+                /\.html?$/i,
+                ''
+            );
+    }
+
+
+    // =========================================================
+    // URL ФАЙЛА
+    // =========================================================
+
+    function getFileUrl(
+        fileName
+    ) {
+
+        return (
+            REPO_BASE +
+
+            fileName
+                .split('/')
+                .map(
+                    part =>
+                        encodeURIComponent(
+                            part
+                        )
+                )
+                .join('/')
+        );
+    }
+
+
+    // =========================================================
+    // ИНДИКАТОР КЭША
+    // =========================================================
+
+    function setCacheStatus(
+        loaded,
+        version = null,
+        loading = false
+    ) {
+
+        cacheIndicator.className =
+            '';
+
+
+        if (loading) {
+
+            cacheIndicator.classList.add(
+                'loading'
+            );
+
+
+            cacheStatusText.textContent =
+                'Загрузка...';
+
+        }
+
+        else if (loaded) {
+
+            cacheIndicator.classList.add(
+                'loaded'
+            );
+
+
+            cacheStatusText.textContent =
+                'Кэш загружен';
+
+        }
+
+        else {
+
+            cacheStatusText.textContent =
+                'Кэш не загружен';
+        }
+
+
+        cacheVersion.textContent =
+            version
+                ? 'Версия: ' + version
+                : 'Версия: —';
+
+
+        cacheButton.disabled =
+            !loaded ||
+            loading;
+    }
+
+
+    // =========================================================
+    // ПРОВЕРКА КЭША
+    // =========================================================
+
+    async function getCacheInfo() {
+
+        try {
+
+            const url =
+                localStorage.getItem(
+                    STORED_URL_KEY
+                );
+
+
+            if (!url) {
+
+                return {
+                    exists: false,
+                    url: null,
+                    version: null
+                };
+            }
+
+
+            const cache =
+                await caches.open(
+                    CACHE_NAME
+                );
+
+
+            const response =
+                await cache.match(
+                    url
+                );
+
+
+            if (!response) {
+
+                return {
+                    exists: false,
+                    url: null,
+                    version: null
+                };
+            }
+
+
+            let version =
+                localStorage.getItem(
+                    CACHED_VERSION_KEY
+                );
+
+
+            if (!version) {
+
+                version =
+                    getVersionFromFileName(
+                        url
+                    );
+            }
+
+
+            return {
+                exists: true,
+                url: url,
+                version: version
+            };
+
+        } catch (error) {
+
+            console.warn(
+                'Ошибка проверки кэша:',
+                error
+            );
+
+
+            return {
+                exists: false,
+                url: null,
+                version: null
+            };
+        }
+    }
+
+
+    // =========================================================
+    // CACHE API
+    // =========================================================
+
+    async function saveToCache(
+        url,
+        response
+    ) {
+
+        const cache =
+            await caches.open(
+                CACHE_NAME
+            );
+
+
+        await cache.put(
+            url,
+            response.clone()
+        );
+    }
+
+
+    async function loadFromCache(
+        url
+    ) {
+
+        const cache =
+            await caches.open(
+                CACHE_NAME
+            );
+
+
+        const response =
+            await cache.match(
+                url
+            );
+
+
+        if (!response) {
+
+            return null;
+        }
+
+
+        return await response.text();
+    }
+
+
+    async function deleteFromCache(
+        url
+    ) {
+
+        try {
+
+            const cache =
+                await caches.open(
+                    CACHE_NAME
+                );
+
+
+            await cache.delete(
+                url
+            );
+
+        } catch (error) {
+
+            console.warn(
+                'Ошибка удаления кэша:',
+                error
+            );
+        }
+    }
+
+
+    // =========================================================
+    // МАНИФЕСТ
+    // =========================================================
+
+    async function fetchManifest() {
+
+        const response =
+            await fetch(
+                MANIFEST_URL,
+                {
+                    cache: 'no-cache'
+                }
+            );
+
+
+        if (!response.ok) {
+
+            if (
+                response.status === 404
+            ) {
+
+                throw new Error(
+                    'manifest.json не найден (404)'
+                );
+            }
+
+
+            throw new Error(
+                'Ошибка загрузки манифеста: ' +
+                response.status
+            );
+        }
+
+
+        let json;
+
+
+        try {
+
+            json =
+                await response.json();
+
+        } catch (error) {
+
+            throw new Error(
+                'Некорректный JSON в manifest.json'
+            );
+        }
+
+
+        if (
+            !json.entry ||
+            typeof json.entry !== 'string'
+        ) {
+
+            throw new Error(
+                'В manifest.json отсутствует поле "entry"'
+            );
+        }
+
+
+        return {
+
+            entry:
+                json.entry,
+
+            version:
+                getVersionFromFileName(
+                    json.entry
+                )
+        };
+    }
+
+
+    // =========================================================
+    // СКАЧИВАНИЕ ФАЙЛА
+    // =========================================================
+
+    async function downloadFile(
+        fileName
+    ) {
+
+        const fileUrl =
+            getFileUrl(
+                fileName
+            );
+
+
+        setCacheStatus(
+            false,
+            null,
+            true
+        );
+
+
+        setStatus(
+            '⬇️ Загрузка страницы...',
+            'success'
+        );
+
+
+        const response =
+            await fetch(
+                fileUrl,
+                {
+                    cache: 'no-cache'
+                }
+            );
+
+
+        if (!response.ok) {
+
+            if (
+                response.status === 404
+            ) {
+
+                await deleteFromCache(
+                    fileUrl
+                );
+
+
+                throw new Error(
+                    `Файл "${fileName}" не найден (404)`
+                );
+            }
+
+
+            throw new Error(
+                'Ошибка загрузки файла: ' +
+                response.status
+            );
+        }
+
+
+        /*
+         * Сохраняем файл в кэш.
+         */
+
+        await saveToCache(
+            fileUrl,
+            response
+        );
+
+
+        /*
+         * Получаем HTML.
+         * Здесь он нужен только для проверки,
+         * но НЕ открывается автоматически.
+         */
+
+        const html =
+            await response.text();
+
+
+        return {
+            html: html,
+            url: fileUrl
+        };
+    }
+
+
+    // =========================================================
+    // ОТКРЫТИЕ ОСНОВНОЙ СТРАНИЦЫ
+    // =========================================================
+
+    function applyApp(
+        html
+    ) {
+
+        /*
+         * Запоминаем тему загрузчика.
+         */
+
+        const currentTheme =
+            getTheme();
+
+
+        const container =
+            document.createElement(
+                'div'
+            );
+
+
+        container.innerHTML =
+            html;
+
+
+        const loadedBody =
+            container.querySelector(
+                'body'
+            );
+
+
+        let appHTML;
+
+
+        if (loadedBody) {
+
+            appHTML =
+                loadedBody.innerHTML;
+
+        } else {
+
+            appHTML =
+                html;
+        }
+
+
+        /*
+         * Убираем загрузчик.
+         */
+
+        document.body.innerHTML =
+            appHTML;
+
+
+        /*
+         * Возвращаем сохранённую тему.
+         */
+
+        try {
+
+            if (
+                currentTheme !== null
+            ) {
+
+                localStorage.setItem(
+                    THEME_KEY,
+                    currentTheme
+                );
+            }
+
+        } catch (error) {
+
+            console.warn(
+                'Не удалось сохранить app-theme:',
+                error
+            );
+        }
+
+
+        // =====================================================
+        // ЗАПУСК SCRIPT ОСНОВНОЙ СТРАНИЦЫ
+        // =====================================================
+
+        const scripts =
+            document.body.querySelectorAll(
+                'script'
+            );
+
+
+        scripts.forEach(
+            oldScript => {
+
+                const newScript =
+                    document.createElement(
+                        'script'
+                    );
+
+
+                for (
+                    const attr of
+                    oldScript.attributes
+                ) {
+
+                    newScript.setAttribute(
+                        attr.name,
+                        attr.value
+                    );
+                }
+
+
+                newScript.textContent =
+                    oldScript.textContent;
+
+
+                oldScript.parentNode.replaceChild(
+                    newScript,
+                    oldScript
+                );
+            }
+        );
+
+
+        /*
+         * Даём основной странице обработать DOM.
+         */
+
+        setTimeout(
+            function () {
+
+                document.dispatchEvent(
+                    new Event(
+                        'DOMContentLoaded',
+                        {
+                            bubbles: true,
+                            cancelable: false
+                        }
+                    )
+                );
+
+
+                window.dispatchEvent(
+                    new Event(
+                        'load'
+                    )
+                );
+
+
+                window.dispatchEvent(
+                    new CustomEvent(
+                        'themechange',
+                        {
+                            detail: {
+                                theme:
+                                    currentTheme
+                            }
+                        }
+                    )
+                );
+
+            },
+            0
+        );
+    }
+
+
+    // =========================================================
+    // ЗАГРУЗИТЬ / ОБНОВИТЬ
+    // =========================================================
+
+    async function updateApp() {
+
+        updateButton.disabled =
+            true;
+
+
+        cacheButton.disabled =
+            true;
+
+
+        try {
+
+            setStatus(
+                '🔄 Загрузка манифеста...',
+                'success'
+            );
+
+
+            const manifest =
+                await fetchManifest();
+
+
+            const fileName =
+                manifest.entry;
+
+
+            const version =
+                manifest.version;
+
+
+            setStatus(
+                `📄 Найден файл: ${fileName}`,
+                'success'
+            );
+
+
+            const result =
+                await downloadFile(
+                    fileName
+                );
+
+
+            /*
+             * Сохраняем URL кэшированного файла.
+             */
+
+            localStorage.setItem(
+                STORED_URL_KEY,
+                result.url
+            );
+
+
+            /*
+             * Сохраняем версию.
+             */
+
+            localStorage.setItem(
+                CACHED_VERSION_KEY,
+                version
+            );
+
+
+            /*
+             * ВАЖНО:
+             *
+             * applyApp() здесь НЕ вызывается.
+             *
+             * Поэтому после скачивания страница
+             * автоматически НЕ открывается.
+             */
+
+            setCacheStatus(
+                true,
+                version,
+                false
+            );
+
+
+            setStatus(
+                `✅ Страница скачана и сохранена в кэш. Версия ${version}`,
+                'success'
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                'Ошибка обновления:',
+                error
+            );
+
+
+            setStatus(
+                '❌ ' + error.message,
+                'error'
+            );
+
+
+            const info =
+                await getCacheInfo();
+
+
+            setCacheStatus(
+                info.exists,
+                info.version,
+                false
+            );
+
+        } finally {
+
+            updateButton.disabled =
+                false;
+        }
+    }
+
+
+    // =========================================================
+    // ЗАГРУЗИТЬ ИЗ КЭША
+    // =========================================================
+
+    async function loadCachedApp() {
+
+        updateButton.disabled =
+            true;
+
+
+        cacheButton.disabled =
+            true;
+
+
+        try {
+
+            const info =
+                await getCacheInfo();
+
+
+            if (
+                !info.exists ||
+                !info.url
+            ) {
+
+                throw new Error(
+                    'Кэш отсутствует.'
+                );
+            }
+
+
+            setCacheStatus(
+                true,
+                info.version,
+                true
+            );
+
+
+            setStatus(
+                info.version
+                    ? `📦 Загрузка версии ${info.version} из кэша...`
+                    : '📦 Загрузка страницы из кэша...',
+                'success'
+            );
+
+
+            const html =
+                await loadFromCache(
+                    info.url
+                );
+
+
+            if (!html) {
+
+                throw new Error(
+                    'Кэш найден, но файл пуст.'
+                );
+            }
+
+
+            /*
+             * Только здесь открывается страница.
+             */
+
+            applyApp(
+                html
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Ошибка загрузки кэша:',
+                error
+            );
+
+
+            setStatus(
+                '❌ ' + error.message,
+                'error'
+            );
+
+
+            const info =
+                await getCacheInfo();
+
+
+            setCacheStatus(
+                info.exists,
+                info.version,
+                false
+            );
+
+
+            updateButton.disabled =
+                false;
+        }
+    }
+
+
+    // =========================================================
+    // ИНИЦИАЛИЗАЦИЯ
+    // =========================================================
+
+    async function initialize() {
+
+        /*
+         * Ещё раз применяем тему после загрузки DOM.
+         */
+
+        applyTheme();
+
+
+        const info =
+            await getCacheInfo();
+
+
+        if (info.exists) {
+
+            setCacheStatus(
+                true,
+                info.version,
+                false
+            );
+
+
+            setStatus(
+                info.version
+                    ? `📦 Кэш доступен — версия ${info.version}`
+                    : '📦 Кэш доступен',
+                'success'
+            );
+
+        } else {
+
+            setCacheStatus(
+                false,
+                null,
+                false
+            );
+
+
+            setStatus(
+                'ℹ️ Кэш отсутствует. Нажмите «Загрузить / Обновить».',
+                'warning'
+            );
+        }
+    }
+
+
+    // =========================================================
+    // СОБЫТИЯ
+    // =========================================================
+
+    updateButton.addEventListener(
+        'click',
+        updateApp
+    );
+
+
+    cacheButton.addEventListener(
+        'click',
+        loadCachedApp
+    );
+
+
+    // =========================================================
+    // ЗАПУСК
+    // =========================================================
+
+    initialize();
+
+})();
+
+</script>
+
+</body>
+</html>
