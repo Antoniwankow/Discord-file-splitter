@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFS (Discord File Splitter) — Закрытие проекта</title>
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --text-color: #333;
+            --section-bg: white;
+            --border-color: #e0e0e0;
+            --card-bg: #f8f9fa;
+            --badge-bg: #fee2e2;
+            --badge-color: #b91c1c;
+            --small-color: #666;
+            --btn-hover-bg: rgba(128, 128, 128, 0.1);
+            --modal-overlay: rgba(0, 0, 0, 0.45);
+            --accent: #5865F2;
+            --accent-hover: #4752c4;
+            --link-color: #5865F2;
+        }
+
+        body.dark-theme {
+            --bg-color: #1e1f22;
+            --text-color: #dbdee1;
+            --section-bg: #2b2d31;
+            --border-color: #35373c;
+            --card-bg: #383a40;
+            --badge-bg: #4a2525;
+            --badge-color: #ff8a8a;
+            --small-color: #949ba4;
+            --btn-hover-bg: rgba(255, 255, 255, 0.1);
+            --modal-overlay: rgba(0, 0, 0, 0.7);
+            --accent: #5865F2;
+            --accent-hover: #4752c4;
+            --link-color: #7b8cf5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 760px;
+            margin: 60px auto 40px;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            position: relative;
+            transition: background-color 0.3s, color 0.3s;
+            line-height: 1.6;
+        }
+
+        #themeToggle {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: transform 0.2s, background-color 0.2s;
+            line-height: 1;
+        }
+        #themeToggle:hover {
+            transform: scale(1.1);
+            background-color: var(--btn-hover-bg);
+        }
+
+        .main-card {
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 40px 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .badge-status {
+            display: inline-block;
+            background-color: var(--badge-bg);
+            color: var(--badge-color);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--accent);
+            margin: 0 0 16px 0;
+            font-size: 26px;
+        }
+
+        .notice-text {
+            font-size: 17px;
+            margin-bottom: 25px;
+            color: var(--text-color);
+            opacity: 0.95;
+        }
+
+        .thank-you {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--small-color);
+            margin-bottom: 30px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            cursor: pointer;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .action-btn:hover { background-color: var(--accent-hover); }
+        .action-btn:active { transform: scale(0.98); }
+
+        .action-btn.secondary {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        .action-btn.secondary:hover {
+            background-color: var(--btn-hover-bg);
+        }
+
+        /* Модальное окно FAQ */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-overlay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-window {
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 30px;
+            width: 100%;
+            max-width: 620px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px; right: 18px;
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+            padding: 4px;
+            line-height: 1;
+        }
+        .modal-close:hover { opacity: 1; }
+
+        .modal-title {
+            margin: 0 0 20px;
+            font-size: 21px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .faq-item {
+            background: var(--card-bg);
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+        }
+        .faq-item:last-child { margin-bottom: 0; }
+
+        .faq-question {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        .faq-answer {
+            font-size: 14px;
+            color: var(--text-color);
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .faq-link {
+            color: var(--link-color);
+            text-decoration: underline;
+            word-break: break-all;
+            font-weight: 600;
+        }
+        .faq-link:hover { opacity: 0.8; }
+
+        footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--small-color);
+        }
+    </style>
+</head>
+<body>
+    <button id="themeToggle" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+
+    <div class="main-card">
+        <span class="badge-status">⚠️ Статус: проект завершён</span>
+        <h1>DFS (Discord File Splitter)</h1>
+        
+        <p class="notice-text">
+            Разработка и поддержка DFS (Discord File Splitter) прекращена по некоторым причинам.
+        </p>
+        
+        <p class="thank-you">
+            Спасибо всем, кто хотя бы раз его использовал! ❤️
+        </p>
+
+        <div class="btn-group">
+            <button class="action-btn" onclick="openFaq()">
+                ❓ Часто задаваемые вопросы (FAQ)
+            </button>
+            <a class="action-btn secondary" href="https://github.com/Antoniwankow/Discord-file-splitter" target="_blank" rel="noopener noreferrer">
+                📦 GitHub-репозиторий
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        Discord File Splitter Archive
+    </footer>
+
+    <!-- Модальное окно FAQ -->
+    <div id="faqModal" class="modal-overlay" onclick="closeFaq(event)">
+        <div class="modal-window" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeFaq(null)">✕</button>
+            <h3 class="modal-title">❓ Часто задаваемые вопросы</h3>
+
+            <div class="faq-item">
+                <div class="faq-question">1. Почему закрыт проект и прекращена разработка?</div>
+                <p class="faq-answer">
+                    У меня больше нет желания разрабатывать инструмент: мой основной аккаунт был забанен навсегда без на то причины. Апелляция не решила мою ситуацию, из-за чего у меня полностью потерялась какая-либо мотивация работать над DFS.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">2. Будут ли выходить новые версии? Где взять старые?</div>
+                <p class="faq-answer">
+                    Новые версии выходить не будут по вышеуказанным причинам. Однако на данный момент все файлы с прошлыми версиями в репозитории остались, и вы по-прежнему можете их скачать и использовать.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">3. Могу ли я форкнуть проект или продолжить его?</div>
+                <p class="faq-answer">
+                    Да. Лицензия моего проекта позволяет продолжить каждому из вас мои деяния, но важно, чтобы вы обязательно упомянули меня как автора оригинала.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">4. Где находится официальный репозиторий?</div>
+                <p class="faq-answer">
+                    Если вы скачали этот файл прямо с репозитория, то ссылка вам не нужна. Но если вам скинули DFS Loader или этот файл отдельно — настоящий репозиторий со всеми файлами находится здесь:<br>
+                    <a class="faq-link" href="https://github.com/Antoniwankow/Discord-file-splitter" target="_blank" rel="noopener noreferrer">
+                        https://github.com/Antoniwankow/Discord-file-splitter
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('faqModal');
+        const themeBtn = document.getElementById('themeToggle');
+
+        function openFaq() {
+            modal.classList.add('active');
+        }
+
+        function closeFaq(event) {
+            if (!event || event.target === modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeFaq(null);
+        });
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-theme');
+            localStorage.setItem('app-theme', isDark ? 'dark' : 'light');
+            themeBtn.textContent = isDark ? '☀️' : '🌙';
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('app-theme') || 'light';
+            if (saved === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeBtn.textContent = '☀️';
+            } else {
+                themeBtn.textContent = '🌙';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTheme);
+    </script>
+</body>
+</html>
